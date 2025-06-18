@@ -33,7 +33,7 @@
 						and deployment automation.
 					</p>
 					<div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-						<Button size="xl" href="https://github.com/jpteasdale/fullstack-web-template">
+						<Button size="xl" href="https://github.com/jpteasdale/fullstack-ai-web-template">
 							<svg class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
 								<path
 									fill-rule="evenodd"
@@ -444,7 +444,7 @@
 							<p class="text-muted-foreground mt-1">Get started with the template in seconds</p>
 							<div class="bg-muted border-border mt-3 rounded-lg border p-4">
 								<code class="text-chart-2 text-sm"
-									>git clone https://github.com/yourusername/fullstack-web-template.git</code
+									>git clone https://github.com/yourusername/fullstack-ai-web-template.git</code
 								>
 							</div>
 						</div>
@@ -503,7 +503,7 @@
 			</p>
 			<div class="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 				<a
-					href="https://github.com/yourusername/fullstack-web-template"
+					href="https://github.com/yourusername/fullstack-ai-web-template"
 					class="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-lg px-8 py-4 text-lg font-semibold shadow-lg transition-all hover:shadow-xl"
 				>
 					<svg class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -529,7 +529,7 @@
 				<p class="text-muted-foreground text-sm">
 					Built with ❤️ using the technologies showcased above.
 					<a
-						href="https://github.com/yourusername/fullstack-web-template"
+						href="https://github.com/yourusername/fullstack-ai-web-template"
 						class="text-primary hover:text-primary/80"
 					>
 						Contribute on GitHub
