@@ -1,0 +1,24 @@
+# Environement variables for running scripts
+# Useful for running cli tools (ie. supabase / wrangler) without having to login / reautheticate 
+
+# Your supabase user auth token
+# From https://supabase.com/dashboard/account/tokens
+SUPABASE_ACCESS_TOKEN=TODO 
+
+# Supabase project info:
+# From https://supabase.com/dashboard/ > Project Settings > General
+SUPABASE_PROJECT_ID=TODO 
+
+# Created when setting up your project
+# If you forgot it, reset in Project Settings > Configuration > Database
+SUPABASE_DB_PASSWORD=TODO 
+
+# ie. aws-0-us-east-1 or aws-0-us-west-1
+# from Project > 'Connect'
+SUPABASE_REGION=TODO 
+
+# You will have to create this in Supabase uri
+# Sidebar > Authentication > Auth Hooks > Add New Hook > Email Hook > HTTPS
+# Fill in your production url `https://template.johnteasdale.com/api/webhooks/supabase/auth_email`
+# Click 'Generate Secret' and copy the value here
+SUPABASE_AUTH_HOOK_SECRET=TODO

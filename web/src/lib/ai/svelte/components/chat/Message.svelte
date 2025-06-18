@@ -1,0 +1,108 @@
+<script lang="ts">
+	import { marked } from 'marked';
+	import type {
+		ResponseInputMessageItem,
+		ResponseOutputMessage
+	} from 'openai/resources/responses/responses';
+	import TextAnnotations from './TextAnnotations.svelte';
+	
+	const props: {
+		message: ResponseOutputMessage | ResponseInputMessageItem;
+	} = $props();
+
+	const message = $derived(props.message);
+</script>
+
+<div class="container text-sm">
+	{#if message.role === 'user'}
+		<div class="user-message-container">
+			<div class="rounded-lg bg-gray-100 p-2 px-4">
+				<div class="content">
+					{#each message.content as content}
+						{#if content.type === 'input_text'}
+							{@html marked(content.text || '')}
+						{:else if content.type === 'input_image'}
+							<img src={content.image_url} alt={content.detail} />
+						{:else if content.type === 'input_file'}
+							<div class="bg-gray-100 rounded-lg p-2 px-4">
+								{content.filename}
+							</div>
+						{/if}
+					{/each}
+				</div>
+			</div>
+		</div>
+	{:else if message.role === 'assistant'}
+		<div class="assistant-message-container">
+			<div class="assistant-message-bubble prose-sm">
+				<!-- Only show animation if store has been initialized -->
+				{#each message.content as content}
+					{#if content.type === 'output_text'}
+						{@const annotations = content.annotations || []}
+						{@html marked(content.text || '')}
+						{#if !content.done}<span class="dot"></span>{/if}
+						<TextAnnotations {annotations} />
+					{:else if content.type === 'refusal'}
+						<div class="bg-destructive text-destructive-foreground w-full rounded-lg p-2 px-4">
+							{@html marked(content.refusal || '')}
+							{#if !content.done}<span class="dot"></span>{/if}
+						</div>
+					{/if}
+				{/each}
+			</div>
+		</div>
+	{/if}
+</div>
+
+<style>
+	.container {
+		padding: 6px;
+	}
+
+	.user-message-container {
+		display: flex;
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+
+	.user-message-bubble {
+		margin-left: 16px;
+		border-radius: 16px;
+		padding: 4px 16px;
+		max-width: 80%;
+	}
+
+	.assistant-message-container {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.assistant-message-bubble {
+	}
+
+	.content {
+		white-space: pre-wrap;
+		overflow-wrap: break-word;
+	}
+
+	.dot {
+		display: inline-block;
+		width: 10px;
+		height: 10px;
+		border-radius: 7px;
+		margin-left: 4px;
+		animation: pulse 1.5s infinite ease-in-out;
+	}
+
+	@keyframes pulse {
+		0% {
+			opacity: 0.3;
+		}
+		50% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0.3;
+		}
+	}
+</style>

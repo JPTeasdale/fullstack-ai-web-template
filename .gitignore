@@ -1,0 +1,9 @@
+# Env
+.env
+.env.*
+*/.env.*
+.envrc
+!*.env.example
+!*.env.*.example
+!*.env.*.test
+node_modules/*

@@ -1,0 +1,10 @@
+{
+    "name": "Development Monorepo",
+    "folders": [
+      // { "path": "cleanlife-expo" },
+      { "path": "web" },
+      { "path": "supabase" },
+      { "path": "scripts" },
+    ],
+    "settings": {}
+  }
