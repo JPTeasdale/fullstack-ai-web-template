@@ -112,13 +112,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const emailTemplate = getEmailTemplate(email_data.email_action_type, {
 			token: email_data.token,
 			redirectTo: email_data.redirect_to,
-			siteUrl: email_data.site_url
+			siteUrl: email_data.site_url,
 		});
 
 		try {
 			await locals.ses.send(
 				new SendEmailCommand({
-					Source: 'noreply@yourapp.com',
+					Source: 'noreply@johnteasdale.com',
 					Destination: {
 						ToAddresses: [user.email]
 					},
