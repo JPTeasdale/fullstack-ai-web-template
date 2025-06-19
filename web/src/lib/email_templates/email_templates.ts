@@ -28,7 +28,7 @@ export const getEmailTemplate = (actionType: string, options: EmailTemplateOptio
 					</a>
 					<p>Or enter this code: <strong>${token}</strong></p>
 				`,
-				text: `Welcome! Thanks for signing up. Please confirm your account by visiting: ${baseUrl}/auth/confirm?token=${token}&redirect_to=${encodeURIComponent(redirectTo)} Or enter this code: ${token}`
+				text: `Welcome! Thanks for signing up. Please confirm your account by visiting: ${siteUrl}/auth/confirm?token=${token}&redirect_to=${encodeURIComponent(redirectTo)} Or enter this code: ${token}`
 			};
 		
 		case 'recovery':
