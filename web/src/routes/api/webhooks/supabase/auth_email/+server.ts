@@ -1,6 +1,5 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import { getEmailTemplate } from '$lib/email_templates/email_templates';
 import { SendEmailCommand } from '@aws-sdk/client-ses';
 import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
@@ -65,9 +64,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		const payload = await request.text();
 		const headers = Object.fromEntries(request.headers);
-		const wh = new Webhook(SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET);
-
 		let verifiedPayload: AuthEmailPayload | null = null;
+
+		const wh = new Webhook(SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET.replace('v1,', ''));
+
 		try {
 			verifiedPayload = wh.verify(payload, headers) as AuthEmailPayload;
 		} catch (error) {
@@ -80,8 +80,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			return json({ error: 'Invalid signature' }, { status: 401 });
 		}
 
-		const { user, email_data } = verifiedPayload;	
-		
+		const { user, email_data } = verifiedPayload;
+
 		console.log('Auth email webhook received:', {
 			userId: user.id,
 			email: user.email,
