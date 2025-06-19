@@ -1,10 +1,17 @@
 import { json } from '@sveltejs/kit';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { CLOUDFLARE_R2_ROOT_BUCKET_NAME } from '$env/static/private';
 import { createFileUploadKey } from '$lib/utils/fileUpload';
-import { webReadableStreamToNodeReadable } from '$lib/stream.js';
+import { FixedLengthStream } from '@cloudflare/workers-types';
 
-export async function POST({ request, locals: { supabase, supabaseAdmin, user, openai, s3 } }) {
+export async function POST({ request, locals: { supabase, supabaseAdmin, user, openai, r2 } }) {
+	if (!user) {
+		return json(
+			{ error: 'Unauthorized' },
+			{
+				status: 401
+			}
+		);
+	}
+
 	try {
 		const formData = await request.formData();
 		const orgId = formData.get('orgId') as string | null;
@@ -50,12 +57,14 @@ export async function POST({ request, locals: { supabase, supabaseAdmin, user, o
 		const { data: fileUpload, error: fileUploadError } = await supabase
 			.from('files')
 			.insert({
-				org_id: orgId,
-				uploaded_by: user?.id,
-				filename: file.name,
-				content_type: contentType
+				organization_id: orgId,
+				name: file.name,
+				mime_type: contentType,
+				is_public: false,
+				size: file.size,
+				user_id: user.id
 			})
-			.select('id,org_id')
+			.select('id,organization_id')
 			.single();
 
 		if (fileUploadError || !fileUpload) {
@@ -72,33 +81,33 @@ export async function POST({ request, locals: { supabase, supabaseAdmin, user, o
 
 		const key = createFileUploadKey(fileUpload);
 
-		const command = new PutObjectCommand({
-			Bucket: CLOUDFLARE_R2_ROOT_BUCKET_NAME,
-			Key: key,
-			ContentType: contentType,
-			Body: webReadableStreamToNodeReadable(upload),
-			ContentLength: file.size,
-			ACL: 'private'
-		});
+		const { readable, writable } = new FixedLengthStream(file.size);
 
-		const s3UplaodPromise = s3.send(command);
+		// @ts-expect-error just some weird nonses type error
+		upload.pipeTo(writable);
 
+		const uploadPromise = r2.put(key, readable);
+
+		let openaiFileId: string | null = null;
 		if (isDocument) {
 			const openaiFile = await openai.files.create({
 				purpose: 'user_data',
 				file
 			});
 
-			await supabaseAdmin
-				.from('files')
-				.update({
-					openai_file_id: openaiFile.id
-				})
-				.eq('id', fileUpload.id)
-				.single();
+			openaiFileId = openaiFile.id;
 		}
 
-		await s3UplaodPromise;
+		await uploadPromise;
+
+		await supabaseAdmin
+			.from('files')
+			.update({
+				is_ready: true,
+				openai_file_id: openaiFileId
+			})
+			.eq('id', fileUpload.id)
+			.single();
 
 		return json({
 			fileId: fileUpload.id

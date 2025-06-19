@@ -24,4 +24,4 @@ export SUPABASE_REGION=TODO
 export SUPABASE_AUTH_HOOK_SECRET=TODO
 
 # Create in https://dash.cloudflare.com/profile/api-tokens
-export CLOUDFLARE_API_TOKEN=TODO
+export npx CLOUDFLARE_API_TOKEN=TODO

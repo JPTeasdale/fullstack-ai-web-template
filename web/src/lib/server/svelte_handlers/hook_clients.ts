@@ -4,17 +4,14 @@ import { PostHog } from 'posthog-node';
 import { PUBLIC_POSTHOG_KEY } from '$env/static/public';
 import { URL_POSTHOG_PROXY } from '$lib/url';
 
-import { OPENAI_API_KEY } from '$env/static/private';
+import {  OPENAI_API_KEY } from '$env/static/private';
 import { OpenAI } from '@posthog/ai';
 
 import { SESClient } from '@aws-sdk/client-ses';
 import {
 	AWS_ACCESS_KEY_ID,
 	AWS_SECRET_ACCESS_KEY,
-	CLOUDFLARE_R2_ACCESS_KEY,
-	CLOUDFLARE_R2_SECRET_KEY
 } from '$env/static/private';
-import { S3Client } from '@aws-sdk/client-s3';
 
 const posthog: Handle = async ({ event, resolve }) => {
 	const posthog = new PostHog(PUBLIC_POSTHOG_KEY, {
@@ -86,19 +83,9 @@ export const ses: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const s3: Handle = async ({ event, resolve }) => {
-	event.locals.s3 = new S3Client({
-		region: 'auto',
-		credentials: {
-			accessKeyId: CLOUDFLARE_R2_ACCESS_KEY,
-			secretAccessKey: CLOUDFLARE_R2_SECRET_KEY
-		},
-		endpoint: CLOUDFLARE_R2_S3_ENDPOINT,
-		requestChecksumCalculation: 'WHEN_REQUIRED',
-		responseChecksumValidation: 'WHEN_REQUIRED'
-	});
-
+export const r2: Handle = async ({ event, resolve }) => {
+	event.locals.r2 = event.platform?.env.FILE_STORAGE;
 	return resolve(event);
 };
 
-export const hookClients = sequence(posthog, posthogProxy, openai, ses, s3);
+export const hookClients = sequence(posthog, posthogProxy, openai, ses, r2);

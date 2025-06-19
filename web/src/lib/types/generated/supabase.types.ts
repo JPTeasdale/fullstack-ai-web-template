@@ -62,9 +62,11 @@ export type Database = {
           created_at: string
           id: string
           is_public: boolean
+          is_ready: boolean
           metadata: Json | null
           mime_type: string
           name: string
+          openai_file_id: string | null
           organization_id: string | null
           size: number
           updated_at: string
@@ -75,9 +77,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_public?: boolean
+          is_ready?: boolean
           metadata?: Json | null
           mime_type: string
           name: string
+          openai_file_id?: string | null
           organization_id?: string | null
           size: number
           updated_at?: string
@@ -88,9 +92,11 @@ export type Database = {
           created_at?: string
           id?: string
           is_public?: boolean
+          is_ready?: boolean
           metadata?: Json | null
           mime_type?: string
           name?: string
+          openai_file_id?: string | null
           organization_id?: string | null
           size?: number
           updated_at?: string

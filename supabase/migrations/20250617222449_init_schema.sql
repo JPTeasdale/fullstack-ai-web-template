@@ -410,6 +410,8 @@ CREATE TABLE public.files (
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    openai_file_id TEXT,
+    is_ready BOOLEAN DEFAULT FALSE NOT NULL,
     
     CONSTRAINT files_size_positive CHECK (size > 0)
 );

@@ -57,7 +57,6 @@
 		"vitest": "^3.2.3"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "^3.832.0",
 		"@aws-sdk/client-ses": "^3.830.0",
 		"@posthog/ai": "^5.1.0",
 		"@supabase/ssr": "^0.6.1",

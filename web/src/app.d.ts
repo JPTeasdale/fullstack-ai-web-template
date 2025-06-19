@@ -23,12 +23,18 @@ declare global {
 			posthog: PostHog;
 			openai: OpenAI;
 			ses: SESClient;
-			s3: S3Client;
+			r2: R2Bucket;
 			trace: {
 				distinctId: string;
 				orgId: string;
 			}
 		}
+
+		interface Platform {
+			env: {
+			  FILE_STORAGE: R2Bucket;
+			};
+		  }
 		interface PageData {
 			session: Session | null;
 		}

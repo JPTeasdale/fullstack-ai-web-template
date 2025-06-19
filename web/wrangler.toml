@@ -12,6 +12,11 @@ command = "npm run build"
 
 [env.production]
 
+[[env.production.r2_buckets]]
+binding = "FILE_STORAGE"
+bucket_name = "fullstack-ai-web-template-bucket"
+
 [env.production.vars]
 NODE_VERSION = "22.14.0" 
 APP_URL = "https://template.johnteasdale.com"
+
