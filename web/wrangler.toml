@@ -1,28 +1,16 @@
 name = "fullstack-ai-web-template"
-main = ".svelte-kit/cloudflare/_worker.js"
+pages_build_output_dir = ".svelte-kit/cloudflare"
 compatibility_date = "2025-06-16"
 compatibility_flags = ["nodejs_compat"]
-
-[assets]
-binding = "ASSETS"
-directory = ".svelte-kit/cloudflare"
 
 [build]
 command = "npm run build"
 
-[observability.logs]
-enabled = true
-
-[env.production]
-[[env.production.routes]]
-pattern = "template.johnteasdale.com"
-custom_domain = true
-
-[[env.production.r2_buckets]]
+[r2_buckets]
 binding = "FILE_STORAGE"
 bucket_name = "fullstack-ai-web-template-bucket"
 
-[env.production.vars]
+[vars]
 NODE_VERSION = "22.14.0" 
 APP_URL = "https://template.johnteasdale.com"
 
