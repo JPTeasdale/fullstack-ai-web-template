@@ -11,9 +11,7 @@
 4. Rename ./.envrc.example to ./.envrc
   - Fill in the varibales from supabase
 4. Run `./scripts/init.sh`
-5. 
+5. Cloudflare > Compute (Workers) > Create > Workers > Import a repository
 
 
-# Optional
 
-1. 
