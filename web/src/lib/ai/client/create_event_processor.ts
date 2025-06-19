@@ -271,13 +271,6 @@ export function createEventProcessor<T extends AiFunctionCallDefinitions>(opts?:
 				}
 				break;
 			}
-			case 'response.reasoning_summary_text.done': {
-				const reasoning = getReasoning(event.item_id);
-				if (reasoning) {
-					reasoning.summary[event.summary_index].text += event.text;
-				}
-				break;
-			}
 
 			case 'response.reasoning.done':
 			case 'response.reasoning.delta': {
