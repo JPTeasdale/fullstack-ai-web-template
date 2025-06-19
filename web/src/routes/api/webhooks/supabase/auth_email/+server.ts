@@ -3,6 +3,7 @@ import { json } from '@sveltejs/kit';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { getEmailTemplate } from '$lib/email_templates/email_templates';
 import { SendEmailCommand } from '@aws-sdk/client-ses';
+import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
 
 // Define the auth email event payload structure
 interface AuthEmailUser {
@@ -107,14 +108,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	console.log('POST /api/webhooks/supabase/auth_email');
 
 	try {
-		// Get the webhook secret from environment variables
-		const webhookSecret = process.env.SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET;
-
-		if (!webhookSecret) {
-			console.error('SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET not configured');
-			return json({ error: 'Webhook secret not configured' }, { status: 500 });
-		}
-
 		// Get the request payload and headers
 		const payload = await request.text();
 		const signature =
@@ -128,7 +121,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// Verify the webhook signature
-		const isValid = verifyWebhookSignature(payload, signature, webhookSecret, timestamp);
+		const isValid = verifyWebhookSignature(payload, signature, SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET, timestamp);
 
 		if (!isValid) {
 			console.error('Webhook signature verification failed');
