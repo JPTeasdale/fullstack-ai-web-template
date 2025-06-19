@@ -21,6 +21,7 @@ npm install
 npm run init:secrets
 
 # Use a specific plugin
+npm run init:secrets -- --plugin cloudflare-dev
 npm run init:secrets -- --plugin aws-secrets
 
 # List available plugins
@@ -69,7 +70,31 @@ npm run init:secrets -- --plugin env-file
 
 **Output**: Creates/updates `.env` files in each project directory.
 
-### 2. AWS Secrets Manager Plugin (`aws-secrets`)
+### 2. Cloudflare Workers Plugin (`cloudflare-dev` / `cloudflare-prod`)
+
+Sets secrets directly in Cloudflare Workers using the wrangler CLI.
+
+```bash
+# Development environment
+npm run init:secrets -- --plugin cloudflare-dev
+
+# Production environment  
+npm run init:secrets -- --plugin cloudflare-prod
+```
+
+**Prerequisites**:
+- wrangler CLI installed: `npm install -g wrangler`
+- Authenticated with Cloudflare: `wrangler login`
+- Valid `wrangler.jsonc` file in each project directory
+- Proper Cloudflare account access and permissions
+
+**Output**: Sets secrets directly in your Cloudflare Workers projects for the specified environment.
+
+**Environment Handling**:
+- `cloudflare-dev`: Uses `--env development` flag
+- `cloudflare-prod`: Uses `--env production` flag
+
+### 3. AWS Secrets Manager Plugin (`aws-secrets`)
 
 Stores secrets in AWS Secrets Manager for centralized secret management.
 
@@ -135,6 +160,8 @@ Here are some ideas for additional plugins:
 - **Kubernetes Secrets Plugin**: Create K8s secret manifests
 - **Docker Compose Plugin**: Generate docker-compose environment files
 - **CI/CD Plugin**: Push secrets to GitHub Actions, GitLab CI, etc.
+- **Vercel Plugin**: Set environment variables in Vercel projects
+- **Netlify Plugin**: Configure Netlify environment variables
 
 ## Architecture
 
@@ -158,12 +185,21 @@ Here are some ideas for additional plugins:
                               │
                               ▼
 ┌─────────────────┬─────────────────┬─────────────────────────┐
-│   EnvFilePlugin │ AwsSecretsPlugin│    CustomPlugin...      │
+│   EnvFilePlugin │CloudflarePlugin │    AwsSecretsPlugin     │
 ├─────────────────┼─────────────────┼─────────────────────────┤
-│ • Write to .env │ • AWS Secrets   │ • Your implementation  │
-│   files         │   Manager       │                         │
+│ • Write to .env │ • Wrangler CLI  │ • AWS Secrets Manager   │
+│   files         │ • Dev/Prod envs │ • Cross-region support  │
 └─────────────────┴─────────────────┴─────────────────────────┘
 ```
+
+## Plugin Comparison
+
+| Plugin | Output | Environment Support | Prerequisites |
+|--------|--------|-------------------|---------------|
+| `env-file` | Local `.env` files | Single | None |
+| `cloudflare-dev` | Cloudflare Workers | Development | wrangler CLI + auth |
+| `cloudflare-prod` | Cloudflare Workers | Production | wrangler CLI + auth |
+| `aws-secrets` | AWS Secrets Manager | Single | AWS credentials + IAM |
 
 ## CLI Options
 
@@ -173,6 +209,15 @@ Options:
   --list-plugins        List available plugins
   -h, --help           Display help for command
 ```
+
+## Available Plugins
+
+Run `npm run init:secrets -- --list-plugins` to see all available plugins:
+
+- `env-file` - Write to local .env files (default)
+- `cloudflare-dev` - Set secrets in Cloudflare Workers (development)
+- `cloudflare-prod` - Set secrets in Cloudflare Workers (production)
+- `aws-secrets` - Store secrets in AWS Secrets Manager
 
 ## Development
 
@@ -197,5 +242,6 @@ The TypeScript version maintains the same core functionality as the original bas
 - ✅ Better user experience with inquirer prompts
 - ✅ More robust JSONC parsing
 - ✅ Structured, maintainable code
+- ✅ Multiple output destinations (local files, Cloudflare, AWS, etc.)
 
 The configuration format (`wrangler_secrets.jsonc`) remains exactly the same, so no changes are needed to existing project configurations. 

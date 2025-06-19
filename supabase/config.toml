@@ -5,7 +5,7 @@
 project_id = "fullstack-web-example"
 
 [remotes.production]
-project_id = "yiyzinklawwrknnkrsew"
+project_id = "TODO_SUPABASE_PROJECT_ID"
 
 [api]
 enabled = true

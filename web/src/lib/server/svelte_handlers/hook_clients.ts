@@ -93,6 +93,7 @@ export const s3: Handle = async ({ event, resolve }) => {
 			accessKeyId: CLOUDFLARE_R2_ACCESS_KEY,
 			secretAccessKey: CLOUDFLARE_R2_SECRET_KEY
 		},
+		endpoint: CLOUDFLARE_R2_S3_ENDPOINT,
 		requestChecksumCalculation: 'WHEN_REQUIRED',
 		responseChecksumValidation: 'WHEN_REQUIRED'
 	});
