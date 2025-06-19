@@ -3,9 +3,6 @@ pages_build_output_dir = ".svelte-kit/cloudflare"
 compatibility_date = "2025-06-16"
 compatibility_flags = ["nodejs_compat"]
 
-[build]
-command = "npm run build"
-
 [[r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "fullstack-ai-web-template-bucket"
