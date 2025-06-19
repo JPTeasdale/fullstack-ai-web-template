@@ -3,9 +3,9 @@ import chalk from 'chalk';
 import { SecretPlugin, SecretValue, ProjectConfig } from '../init-secrets';
 
 /**
- * Cloudflare Workers Plugin
+ * Cloudflare Pages Plugin
  * 
- * This plugin uses the wrangler CLI to set secrets directly in Cloudflare Workers projects.
+ * This plugin uses the wrangler CLI to set secrets directly in Cloudflare Pages projects.
  * It automatically detects the environment and sets secrets accordingly.
  * 
  * Usage:
@@ -27,7 +27,7 @@ export class CloudflarePlugin implements SecretPlugin {
   }
 
   async initialize(projectConfig: ProjectConfig): Promise<void> {
-    console.log(chalk.cyan(`☁️  Initializing Cloudflare Workers secrets for ${projectConfig.projectName}`));
+    console.log(chalk.cyan(`☁️  Initializing Cloudflare Pages secrets for ${projectConfig.projectName}`));
     console.log(chalk.blue(`🌍 Environment: ${this.environment}`));
     
     // Verify wrangler is available and authenticated
@@ -41,7 +41,7 @@ export class CloudflarePlugin implements SecretPlugin {
   }
 
   async writeSecret(secret: SecretValue, projectConfig: ProjectConfig): Promise<void> {
-    const args = ['secret', 'put', secret.name];
+    const args = ['pages', 'secret', 'put', secret.name];
     
     // Add environment flag for production
     if (this.environment === 'production') {
@@ -52,14 +52,14 @@ export class CloudflarePlugin implements SecretPlugin {
 
     try {
       await this.executeWrangler(args, projectConfig.projectDir, secret.value);
-      console.log(chalk.green(`✅ Set secret ${secret.name} in Cloudflare Workers (${this.environment})`));
+      console.log(chalk.green(`✅ Set secret ${secret.name} in Cloudflare Pages (${this.environment})`));
     } catch (error: any) {
-      throw new Error(`Failed to set secret ${secret.name} in Cloudflare Workers: ${error.message}`);
+      throw new Error(`Failed to set secret ${secret.name} in Cloudflare Pages: ${error.message}`);
     }
   }
 
   async finalize(projectConfig: ProjectConfig): Promise<void> {
-    console.log(chalk.green(`🎉 All secrets for ${projectConfig.projectName} have been set in Cloudflare Workers!`));
+    console.log(chalk.green(`🎉 All secrets for ${projectConfig.projectName} have been set in Cloudflare Pages!`));
     console.log(chalk.blue(`🌍 Environment: ${this.environment}`));
     console.log(chalk.blue(`📁 Project: ${projectConfig.projectName}`));
     console.log('-----------------------------');

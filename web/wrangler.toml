@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [[r2_buckets]]
 binding = "FILE_STORAGE"
-bucket_name = "fullstack-ai-web-template-bucket"
+bucket_name = "fullstack-ai-web-template"
 
 [vars]
 NODE_VERSION = "22.14.0" 
