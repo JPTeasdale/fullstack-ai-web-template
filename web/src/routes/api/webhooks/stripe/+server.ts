@@ -75,7 +75,6 @@ async function getUserIdFromStripe(
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	console.log('POST /api/webhooks/stripe', {STRIPE_WEBHOOK_SECRET});
 	const { supabaseAdmin } = locals;
 	const stripe = getStripe();
 	const signature = request.headers.get('stripe-signature');
@@ -83,11 +82,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!signature) {
 		console.error('No stripe signature provided');
 		return json({ error: 'No signature provided' }, { status: 400 });
-	}
-
-	if (!STRIPE_WEBHOOK_SECRET) {
-		console.error('STRIPE_WEBHOOK_SECRET not configured');
-		return json({ error: 'Webhook secret not configured' }, { status: 500 });
 	}
 
 	let event: Stripe.Event;

@@ -1,8 +1,7 @@
 import Stripe from 'stripe';
 
-import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from '$env/static/private';
+import { STRIPE_SECRET_KEY } from '$env/static/private';
 
-export const stripeWebhookSecret = STRIPE_WEBHOOK_SECRET;
 
 export function getStripe() {
 	return new Stripe(STRIPE_SECRET_KEY, {
