@@ -30,6 +30,7 @@
     "yargs": "^18.0.0"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "^4.20250619.0"
+    "@cloudflare/workers-types": "^4.20250619.0",
+    "standardwebhooks": "^1.0.0"
   }
 }
