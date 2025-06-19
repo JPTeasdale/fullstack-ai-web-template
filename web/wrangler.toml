@@ -10,7 +10,13 @@ directory = ".svelte-kit/cloudflare"
 [build]
 command = "npm run build"
 
+[observability.logs]
+enabled = true
+
 [env.production]
+[[env.production.routes]]
+pattern = "template.johnteasdale.com"
+custom_domain = true
 
 [[env.production.r2_buckets]]
 binding = "FILE_STORAGE"

@@ -3,12 +3,12 @@ import { z } from 'zod';
 
 export const ExampleCreateTodoArgSchema= z.object({
 	title: z.string().min(1).describe('The title of the todo item'),
-	description: z.string().optional().describe('Optional description for the todo'),
+	description: z.string().describe('Description for the todo'),
 	priority: z
 		.enum(['low', 'medium', 'high'])
 		.default('medium')
 		.describe('Priority level of the todo'),
-	dueDate: z.string().optional().describe('Due date in ISO format (YYYY-MM-DD)')
+	dueDate: z.string().nullable().optional().describe('Due date in ISO format (YYYY-MM-DD)')
 });
 
 export const ExampleCreateTodoArgSchemaPartial = ExampleCreateTodoArgSchema.partial();
@@ -29,16 +29,14 @@ export type AiFunctionCallDefinitionExampleCreateTodo = {
     argsPartial: z.infer<typeof ExampleCreateTodoArgSchemaPartial>;
 }
 
-
-
 export const ExampleUpdateTodoArgSchema= z.object({
-	title: z.string().min(1).describe('The title of the todo item'),
-	description: z.string().optional().describe('Optional description for the todo'),
+	title: z.string().nullable().optional().describe('The title of the todo item'),
+	description: z.string().nullable().optional().describe('Optional description for the todo'),
 	priority: z
 		.enum(['low', 'medium', 'high'])
 		.default('medium')
 		.describe('Priority level of the todo'),
-	dueDate: z.string().optional().describe('Due date in ISO format (YYYY-MM-DD)')
+	dueDate: z.string().nullable().optional().describe('Due date in ISO format (YYYY-MM-DD)')
 });
 
 export const ExampleUpdateTodoArgSchemaPartial = ExampleUpdateTodoArgSchema.partial();

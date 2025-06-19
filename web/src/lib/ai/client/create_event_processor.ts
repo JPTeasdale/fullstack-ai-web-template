@@ -44,7 +44,6 @@ export function createEventProcessor<T extends AiFunctionCallDefinitions>(opts?:
 			case 'mcp_call':
 			case 'code_interpreter_call':
 			case 'local_shell_call':
-			case 'mcp_call':
 			case 'mcp_list_tools':
 				return event;
 			default:

@@ -40,36 +40,6 @@
     gap: 4px;
   }
 
-  .annotation-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-  }
-
-  .annotation-icon {
-    font-size: 16px;
-  }
-
-  .annotation-title {
-    font-weight: 500;
-  }
-
-  .annotation-source {
-    font-style: italic;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .annotation-content {
-    font-size: 13px;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
-    padding-left: 24px;
-  }
-
   a {
     color: inherit;
     text-decoration: underline;

@@ -302,12 +302,6 @@
 		border: none;
 		cursor: pointer;
 	}
-
-	.send-button-disabled {
-		background-color: #d7d7d7;
-		cursor: default;
-	}
-
 	.scroll-to-bottom-button {
 		position: absolute;
 		bottom: 80px;

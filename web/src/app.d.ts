@@ -9,7 +9,6 @@ import type Stripe from 'stripe';
 import type { AppSupabaseClient } from '$lib/types/app.types';
 import type OpenAI from 'openai';
 import type { SESClient } from '@aws-sdk/client-ses';
-import type { S3Client } from '@aws-sdk/client-s3';
 
 declare global {
 	namespace App {

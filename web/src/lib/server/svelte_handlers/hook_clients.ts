@@ -84,7 +84,12 @@ export const ses: Handle = async ({ event, resolve }) => {
 };
 
 export const r2: Handle = async ({ event, resolve }) => {
+	if (!event.platform?.env.FILE_STORAGE) {
+		throw new Error('R2 bucket not found in platform environment');
+	}
+
 	event.locals.r2 = event.platform?.env.FILE_STORAGE;
+
 	return resolve(event);
 };
 

@@ -65,21 +65,10 @@
 		justify-content: flex-end;
 	}
 
-	.user-message-bubble {
-		margin-left: 16px;
-		border-radius: 16px;
-		padding: 4px 16px;
-		max-width: 80%;
-	}
-
 	.assistant-message-container {
 		display: flex;
 		flex-direction: row;
 	}
-
-	.assistant-message-bubble {
-	}
-
 	.content {
 		white-space: pre-wrap;
 		overflow-wrap: break-word;

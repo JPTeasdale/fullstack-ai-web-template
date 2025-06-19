@@ -40,11 +40,11 @@
 	const statusColor = $derived(getStatusColor(toolCall.status || ''));
 </script>
 
-<div class="tool-call-container text-xs">
-	<div class="tool-call-header">
-		<div class="tool-info">
-			<div class="tool-status">
-				<div class="status-indicator" style:background-color={statusColor}></div>
+<div class="flex flex-col gap-2 px-1 py-0.5 text-xs">
+	<div class="flex flex-row items-center justify-between">
+		<div class="flex flex-row items-center gap-2">
+			<div class="flex flex-row items-center gap-1">
+				<div class="w-2 h-2 rounded" style:background-color={statusColor}></div>
 			</div>
 			<div class="tool-name">
 				{displayName}
@@ -52,69 +52,3 @@
 		</div>
 	</div>
 </div>
-
-<style>
-	.tool-call-container {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-		padding: 2px 4px;
-	}
-
-	.tool-call-header {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	.tool-info {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		gap: 8px;
-	}
-
-	.tool-status {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		gap: 4px;
-	}
-
-	.status-indicator {
-		width: 8px;
-		height: 8px;
-		border-radius: 4px;
-	}
-
-	.status-text {
-		font-size: 12px;
-		color: #666;
-		text-transform: capitalize;
-	}
-
-	.tool-args-container {
-		padding: 8px 12px;
-		border-radius: 8px;
-		overflow-x: auto;
-	}
-
-	.tool-args {
-		margin: 0;
-		font-family: monospace;
-		font-size: 12px;
-		overflow-wrap: break-word;
-		white-space: pre-wrap;
-	}
-
-	.tool-output-container {
-		padding: 8px 12px;
-	}
-
-	.tool-output {
-		font-size: 14px;
-		white-space: pre-wrap;
-		overflow-wrap: break-word;
-	}
-</style>

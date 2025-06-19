@@ -6,7 +6,7 @@
 2. Create a project on https://supabase.com
 3. Find and Replace:
   - `fullstack-ai-web-template` -> Your project (make sure it's hyphenated)
-  - `https://template.johnteasdale.com` -> Your domain name
+  - `template.johnteasdale.com` -> Your domain (no https)
   - `TODO_SUPABASE_PROJECT_ID` -> Your Supabase Project ID
 4. Rename ./.envrc.example to ./.envrc
   - Fill in the varibales from supabase

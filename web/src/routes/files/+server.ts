@@ -1,6 +1,5 @@
 import { json } from '@sveltejs/kit';
 import { createFileUploadKey } from '$lib/utils/fileUpload';
-import { FixedLengthStream } from '@cloudflare/workers-types';
 
 export async function POST({ request, locals: { supabase, supabaseAdmin, user, openai, r2 } }) {
 	if (!user) {
@@ -83,7 +82,6 @@ export async function POST({ request, locals: { supabase, supabaseAdmin, user, o
 
 		const { readable, writable } = new FixedLengthStream(file.size);
 
-		// @ts-expect-error just some weird nonses type error
 		upload.pipeTo(writable);
 
 		const uploadPromise = r2.put(key, readable);
