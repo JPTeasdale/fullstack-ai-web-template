@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [build]
 command = "npm run build"
 
-[r2_buckets]
+[[r2_buckets]]
 binding = "FILE_STORAGE"
 bucket_name = "fullstack-ai-web-template-bucket"
 
