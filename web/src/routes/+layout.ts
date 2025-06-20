@@ -16,8 +16,5 @@ export const load: LayoutLoad = async ({ data }) => {
 		});
 	}
 
-	const session = data.session;
-	const user = data.session?.user;
-
-	return { session, user };
+	return { user: data.user };
 };

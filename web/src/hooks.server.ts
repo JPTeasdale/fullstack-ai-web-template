@@ -6,7 +6,7 @@ import { hookRedirects } from '$lib/server/svelte_handlers/hook_redirects';
 import { hookClients } from '$lib/server/svelte_handlers/hook_clients';
 import { getPosthog } from '$lib/server/clients/posthog';
 
-import type { HandleServerError } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
 
 export const handleError: HandleServerError = async ({
 	error,
@@ -33,7 +33,14 @@ export const handleError: HandleServerError = async ({
 	}
 };
 
+const log: Handle = async ({ event, resolve }) => {
+	console.log(event.url.href);
+
+	return resolve(event);
+};
+
 export const handle = sequence(
+	log,
 	hookClients,
 	hookSupabaseSession,
 	hookApi,

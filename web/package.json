@@ -4,7 +4,9 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
+		"//": "The proxy is so supabase can call our auth email webhook from inside the development docker container",
+		"dev:proxy": "npx configurable-http-proxy --port 3000 --change-origin --default-target http://localhost:5173",
+		"dev": "npm run dev:proxy & vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",

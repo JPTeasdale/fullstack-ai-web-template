@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { errorStr } from '$lib/utils/error';
-import { URL_CONFIRM_EMAIL, URL_DASHBOARD } from '$lib/url';
+import { URL_DASHBOARD } from '$lib/url';
 
 export const load: PageServerLoad = async ({ locals: { session } }) => {
 	if (session) {
@@ -48,12 +48,6 @@ export const actions: Actions = {
 					error: 'Failed to create session',
 					email
 				});
-			}
-
-			// Check if user needs email confirmation
-			if (!data.user.email_confirmed_at) {
-				console.log('User needs email confirmation');
-				throw redirect(303, URL_CONFIRM_EMAIL + '?email=' + encodeURIComponent(email));
 			}
 
 			// Session is established successfully - cookies will be set by the Supabase client

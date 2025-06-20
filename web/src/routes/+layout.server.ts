@@ -1,3 +1,4 @@
+import { ses } from "$lib/server/svelte_handlers/hook_clients";
 import type { LayoutServerLoad } from "./$types";
 
 export const load: LayoutServerLoad = async (
@@ -6,7 +7,7 @@ export const load: LayoutServerLoad = async (
     const { session } = await safeGetSession();
 
     return {
-        session,
+        user: session?.user,
         cookies: cookies.getAll(),
     };
 };

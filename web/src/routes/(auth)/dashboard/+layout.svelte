@@ -4,10 +4,21 @@
 	import Sidebar from '$lib/components/Sidebar/Sidebar.svelte';
 	import Chat from '$lib/ai/svelte/components/chat/Chat.svelte';
 	import { ConversationStore } from '$lib/ai/svelte/store/conversationStore';
-	let { children } = $props();
+	import { URL_API_SIGNOUT } from '$lib/url';
+	let { children, data } = $props();
+	const user = $derived(data.user);
+
+	const onSignOut = async () => {
+		const res = await fetch(URL_API_SIGNOUT, {
+			method: 'POST'
+		});
+		if (res.ok) {
+			window.location.reload();
+		}
+	};
 
 	const { generating, conversation, sendMessage } = new ConversationStore({
-		handleAiFunctionCall: console.log
+		handleAiFunctionCall: () => console.log
 	});
 
 	const items = $derived($conversation);
@@ -18,7 +29,7 @@
 
 <div class="flex h-screen grow">
 	<div class="flex h-screen min-h-screen flex-1 flex-col bg-gray-50">
-		<Header />
+		<Header {user} {onSignOut} />
 		<div class="flex grow">
 			<Sidebar />
 			<main class="flex w-full flex-1">

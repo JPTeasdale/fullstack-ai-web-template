@@ -108,7 +108,7 @@ file_size_limit = "50MiB"
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://localhost:3000"
+site_url = "http://localhost:5173"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = []
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
@@ -319,8 +319,11 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [auth.hook.send_email]
 enabled = true
-uri = "http://host.docker.internal:5173/api/webhooks/supabase/auth_email"
+uri = "http://host.docker.internal:3000/api/webhooks/supabase/auth_email"
 secrets = "env(SUPABASE_AUTH_HOOK_SECRET)"
+
+[remotes.production.auth]
+site_url = "https://template.johnteasdale.com"
 
 [remotes.production.auth.hook.send_email]
 enabled = true

@@ -11,8 +11,7 @@ export const URL_DASHBOARD = '/dashboard';
 export const URL_AUTH = '/auth';
 export const URL_SIGNIN = `${URL_AUTH}/signin`;
 export const URL_SIGNUP = `${URL_AUTH}/signup`;
-export const URL_CONFIRM_EMAIL = `${URL_AUTH}/confirm`;
-export const URL_VERIFY_MAGIC_LINK = `${URL_AUTH}/verify`;
+export const URL_VERIFY_MAGIC_LINK = `${URL_AUTH}/confirm`;
 
 export const URL_ROUTE_AUTHENTICATED = '/(auth)';
 

@@ -14,7 +14,6 @@
 
 <div class="flex flex-col gap-4">
 	{#if login}
-		<h1 class="text-foreground text-4xl font-medium">{APP_NAME}</h1>
 		<p class="text-foreground">You've clicked a magic link to log in to {APP_NAME}.</p>
 		<Button href={login}>Log In</Button>
 	{:else}

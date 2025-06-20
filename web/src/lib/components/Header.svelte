@@ -1,15 +1,18 @@
 <script lang="ts">
-	import { getAuthStore } from '$lib/stores/auth';
 	import Button from './ui/button/button.svelte';
 	import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 	import { URL_API_SIGNOUT } from '$lib/url';
 	import { APP_NAME } from '$lib/app/constants';
 	import AppIcon from '$lib/app/AppIcon.svelte';
+	import type { User } from '@supabase/supabase-js';
 
-	const auth = getAuthStore();
-	$effect(() => {
-		console.log('auth', $auth);
-	});
+	const {
+		user,
+		onSignOut
+	}: {
+		user?: User;
+		onSignOut: () => Promise<void>;
+	} = $props();
 </script>
 
 <header class="bg-background z-10 m-3 rounded shadow">
@@ -19,7 +22,7 @@
 			{APP_NAME}
 		</a>
 
-		{#if $auth?.user}
+		{#if user}
 			<Popover>
 				<PopoverTrigger>
 					<Button
@@ -33,7 +36,7 @@
 						<!-- You might want a user avatar here eventually -->
 						<!-- <img class="h-8 w-8 rounded-full" src="user-avatar.png" alt=""> -->
 						<span class="ml-2 text-sm font-medium text-gray-700 lg:block">
-							<span class="sr-only">Open user menu for </span>{$auth?.user?.email}
+							<span class="sr-only">Open user menu for </span>{user.email}
 						</span>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -59,14 +62,7 @@
 						role="menuitem"
 						tabindex={-1}
 						id="user-menu-item-1"
-						onclick={async () => {
-							const res = await fetch(URL_API_SIGNOUT, {
-								method: 'POST'
-							});
-							if (res.ok) {
-								window.location.reload();
-							}
-						}}
+						onclick={onSignOut}
 					>
 						Sign Out
 					</Button>

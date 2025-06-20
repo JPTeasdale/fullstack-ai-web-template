@@ -35,7 +35,7 @@ declare global {
 			};
 		  }
 		interface PageData {
-			session: Session | null;
+			user: User | undefined;
 		}
 		// interface PageState {}
 		// interface Platform {}
