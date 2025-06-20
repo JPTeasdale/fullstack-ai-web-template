@@ -1,4 +1,4 @@
-import { redirect, type Handle } from '@sveltejs/kit';
+import { error, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { URL_AUTH, URL_CONFIRM_EMAIL, URL_ROUTE_AUTHENTICATED, URL_SIGNIN } from '$lib/url';
 

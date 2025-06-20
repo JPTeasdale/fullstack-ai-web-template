@@ -4,26 +4,20 @@ import { PostHog } from 'posthog-node';
 import { PUBLIC_POSTHOG_KEY } from '$env/static/public';
 import { URL_POSTHOG_PROXY } from '$lib/url';
 
-import {  OPENAI_API_KEY } from '$env/static/private';
+import { OPENAI_API_KEY } from '$env/static/private';
 import { OpenAI } from '@posthog/ai';
 
 import { SESClient } from '@aws-sdk/client-ses';
-import {
-	AWS_ACCESS_KEY_ID,
-	AWS_SECRET_ACCESS_KEY,
-} from '$env/static/private';
+import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } from '$env/static/private';
+import { getPosthog } from '../clients/posthog';
 
-const posthog: Handle = async ({ event, resolve }) => {
-	const posthog = new PostHog(PUBLIC_POSTHOG_KEY, {
-		host: 'https://us.i.posthog.com'
-	});
-	event.locals.posthog = posthog;
+export const posthog: Handle = async ({ event, resolve }) => {
+	event.locals.posthog = getPosthog();
 
 	//
 	const res = await resolve(event);
 
-	await posthog.shutdown();
-
+	event.locals.posthog.shutdown();
 	return res;
 };
 

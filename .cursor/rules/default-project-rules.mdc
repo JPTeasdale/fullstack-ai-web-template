@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# SvelteKit
+
+- Always use Svelte5 with rules.
+- Use `$props()` instead of `export let`.
+- Use `<button onclick={} />` instead of ``<button on:click={} />`
+- Use 
+
+# Styling
+
+- Never use gradients. 
+- Always use tailwind classes instead of `<style>` blocks. 
+

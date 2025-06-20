@@ -4,15 +4,32 @@ import { hookDisableDevTools } from '$lib/server/svelte_handlers/hook_disable_de
 import { hookSupabaseSession } from '$lib/server/svelte_handlers/hook_supabase';
 import { hookRedirects } from '$lib/server/svelte_handlers/hook_redirects';
 import { hookClients } from '$lib/server/svelte_handlers/hook_clients';
+import { getPosthog } from '$lib/server/clients/posthog';
 
 import type { HandleServerError } from '@sveltejs/kit';
 
-export const handleError: HandleServerError = async ({ error, status, event: { locals: { posthog } } }) => {
+export const handleError: HandleServerError = async ({
+	error,
+	status,
+	event: {
+		locals: { posthog }
+	}
+}) => {
 	if (status !== 404) {
 		console.error(error);
 
-		posthog.captureException(error);
-		await posthog.shutdown();
+		try {
+			if (posthog) {
+				posthog.captureException(error);
+				await posthog.shutdown();
+			} else {
+				const posthog = getPosthog();
+				posthog.captureException(error);
+				await posthog.shutdown();
+			}
+		} catch (error) {
+			console.error('Error capturing error in posthog', error);
+		}
 	}
 };
 

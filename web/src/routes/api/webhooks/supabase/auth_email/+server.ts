@@ -1,9 +1,14 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { getEmailTemplate } from '$lib/email_templates/email_templates';
+import { getEmailTemplate, type EmailTemplate } from '$lib/email';
 import { SendEmailCommand } from '@aws-sdk/client-ses';
 import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
 import { Webhook } from 'standardwebhooks';
+import { getEmailConfirmTemplate } from '$lib/email/templates/email_confirm';
+import { getPasswordResetTemplate } from '$lib/email/templates/password_reset';
+import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
+import { getInviteGenericTemplate } from '$lib/email/templates/invite_generic';
+import { APP_NAME } from '$lib/app/constants';
 
 // Define the auth email event payload structure
 interface AuthEmailUser {
@@ -82,12 +87,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const { user, email_data } = verifiedPayload;
 
-		console.log('Auth email webhook received:', {
-			userId: user.id,
-			email: user.email,
-			actionType: email_data.email_action_type,
-			timestamp: new Date().toISOString()
-		});
+		console.log('Auth email webhook received:', verifiedPayload);
 
 		// Log the auth event to the database for audit purposes
 		try {
@@ -109,11 +109,40 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			// Don't fail the webhook for audit logging errors
 		}
 
-		const emailTemplate = getEmailTemplate(email_data.email_action_type, {
-			token: email_data.token,
-			redirectTo: email_data.redirect_to,
-			siteUrl: email_data.site_url,
-		});
+		let emailTemplate: EmailTemplate | null = null;
+		switch (email_data.email_action_type) {
+			case 'confirmation':
+				emailTemplate = getEmailConfirmTemplate({
+					token: email_data.token,
+					redirectTo: email_data.redirect_to,
+					siteUrl: email_data.site_url,
+					email: user.email
+				});
+				break;
+			case 'recovery':
+				emailTemplate = getPasswordResetTemplate({
+					token: email_data.token,
+					siteUrl: email_data.site_url,
+					email: user.email
+				});
+				break;
+			case 'invite':
+				emailTemplate = getInviteGenericTemplate({
+					inviteLink: `${email_data.site_url}/auth/invite?token=${email_data.token}`,
+					email: user.email
+				});
+				break;
+			case 'magic_link':
+			case 'signup':
+			case 'email_change_confirm_new':
+			case 'email_change_confirm_old':
+				break;
+		}
+
+		if (!emailTemplate) {
+			console.error('No email template found for action:', email_data.email_action_type);
+			return json({ error: 'No email template found' }, { status: 400 });
+		}
 
 		try {
 			await locals.ses.send(
