@@ -10,23 +10,14 @@ import {
 	EmailSmallText,
 	EmailFooter,
 	EmailContainer
-} from './components';
+} from '../components';
 
 export type EmailConfirmTemplate = {
-	siteUrl: string;
-	token: string;
-	redirectTo: string;
+	confirmLink: string;
 	email: string;
 };
 
-export function getEmailConfirmTemplate({
-	siteUrl,
-	token,
-	email,
-	redirectTo
-}: EmailConfirmTemplate) {
-	const confirmLink = `${siteUrl}/auth/confirm?token=${token}&redirect_to=${redirectTo}`;
-
+export function getEmailConfirmTemplate({ confirmLink, email }: EmailConfirmTemplate) {
 	const html = EmailContainer(
 		EmailHeader(APP_NAME, 'Confirm Your Email'),
 		EmailContent(

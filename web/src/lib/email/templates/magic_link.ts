@@ -10,7 +10,7 @@ import {
 	EmailSmallText,
 	EmailFooter,
 	EmailContainer
-} from './components';
+} from '../components';
 
 export type EmailMagicLinkTemplate = {
 	magicLink: string;

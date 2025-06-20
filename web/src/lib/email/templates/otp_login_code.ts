@@ -8,7 +8,7 @@ import {
 	EmailSmallText,
 	EmailFooter,
 	EmailContainer
-} from './components';
+} from '../components';
 
 export type EmailOtpTemplate = {
 	token: string;

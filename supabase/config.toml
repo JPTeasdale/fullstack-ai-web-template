@@ -5,7 +5,7 @@
 project_id = "fullstack-web-example"
 
 [remotes.production]
-project_id = "TODO_SUPABASE_PROJECT_ID"
+project_id = "yiyzinklawwrknnkrsew"
 
 [api]
 enabled = true
@@ -319,7 +319,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [auth.hook.send_email]
 enabled = true
-uri = "http://host.docker.internal:54321/api/webhooks/supabase/auth_email"
+uri = "http://host.docker.internal:5173/api/webhooks/supabase/auth_email"
 secrets = "env(SUPABASE_AUTH_HOOK_SECRET)"
 
 [remotes.production.auth.hook.send_email]

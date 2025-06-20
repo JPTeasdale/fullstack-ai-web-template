@@ -2,13 +2,14 @@ import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { getEmailTemplate, type EmailTemplate } from '$lib/email';
 import { SendEmailCommand } from '@aws-sdk/client-ses';
-import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
+import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET, SUPABASE_URL } from '$env/static/private';
 import { Webhook } from 'standardwebhooks';
 import { getEmailConfirmTemplate } from '$lib/email/templates/email_confirm';
 import { getPasswordResetTemplate } from '$lib/email/templates/password_reset';
 import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
 import { getInviteGenericTemplate } from '$lib/email/templates/invite_generic';
 import { APP_NAME } from '$lib/app/constants';
+import { getMagicLinkTemplate } from '$lib/email/templates/magic_link';
 
 // Define the auth email event payload structure
 interface AuthEmailUser {
@@ -65,7 +66,13 @@ interface AuthEmailPayload {
 	email_data: AuthEmailData;
 }
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+// Wrap the confirmation URL in a login parameter to prevent the link from being invalidated by email client pre-fetching
+function generateConfirmationURL(url: string, email_data: AuthEmailData) {
+	const confirmLink = `${url}/auth/confirm?token_hash=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${email_data.redirect_to}`;
+	return `${url}/auth/confirm?login=${encodeURIComponent(confirmLink)}`;
+}
+
+export const POST: RequestHandler = async ({ request, locals, url }) => {
 	try {
 		const payload = await request.text();
 		const headers = Object.fromEntries(request.headers);
@@ -110,12 +117,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		let emailTemplate: EmailTemplate | null = null;
+		const confirmLink = generateConfirmationURL(url.origin, email_data);
 		switch (email_data.email_action_type) {
 			case 'confirmation':
 				emailTemplate = getEmailConfirmTemplate({
-					token: email_data.token,
-					redirectTo: email_data.redirect_to,
-					siteUrl: email_data.site_url,
+					confirmLink,
 					email: user.email
 				});
 				break;
@@ -133,6 +139,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				});
 				break;
 			case 'magic_link':
+				emailTemplate = getMagicLinkTemplate({
+					magicLink: confirmLink,
+					email: user.email
+				});
+				break;
 			case 'signup':
 			case 'email_change_confirm_new':
 			case 'email_change_confirm_old':
