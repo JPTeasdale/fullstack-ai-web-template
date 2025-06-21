@@ -26,14 +26,14 @@ declare global {
 			trace: {
 				distinctId: string;
 				orgId: string;
-			}
+			};
 		}
 
 		interface Platform {
 			env: {
-			  FILE_STORAGE: R2Bucket;
+				FILE_STORAGE: R2Bucket;
 			};
-		  }
+		}
 		interface PageData {
 			user: User | undefined;
 		}

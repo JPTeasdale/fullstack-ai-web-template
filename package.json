@@ -1,8 +1,9 @@
 {
   "scripts": {
     "db": "supabase start",
+    "db:test": "PGOPTIONS='--client-min-messages=warning' supabase test db ",
     "db:changed": "./scripts/db_changed.sh",
-    "db:deploy:prod": "./scripts/db_deploy_prod.sh",
+    "db:push": "./scripts/db_deploy_prod.sh",
     "//": "https://docs.stripe.com/stripe-cli#install",
     "stripe": "stripe listen --forward-to http://localhost:5173/api/webhooks/stripe",
     "stripe:trigger": "stripe trigger",

@@ -19,7 +19,9 @@ export interface EventCallbacks<T extends AiFunctionCallDefinitions> {
 }
 
 // Create a processor that maintains state across multiple calls
-export function createEventProcessor<T extends AiFunctionCallDefinitions>(opts?: EventCallbacks<T>) {
+export function createEventProcessor<T extends AiFunctionCallDefinitions>(
+	opts?: EventCallbacks<T>
+) {
 	// Track in-progress events by their ID
 	const inProgressEvents = new Map<string, ServerConversationItem>();
 

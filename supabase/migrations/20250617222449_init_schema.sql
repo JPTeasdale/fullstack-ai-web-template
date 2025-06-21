@@ -20,13 +20,21 @@ DROP TABLE IF EXISTS public.organization_members CASCADE;
 DROP TABLE IF EXISTS public.organizations CASCADE;
 DROP TABLE IF EXISTS public.subscriptions CASCADE;
 DROP TABLE IF EXISTS public.user_profiles CASCADE;
+DROP TABLE IF EXISTS public.user_profiles_private CASCADE;
 
 -- Drop functions
-DROP FUNCTION IF EXISTS public.authorize(UUID, UUID, public.member_role);
+DROP FUNCTION IF EXISTS public.authorize_active_org(UUID, public.member_role);
 DROP FUNCTION IF EXISTS public.create_organization_with_owner(TEXT, TEXT, TEXT);
 DROP FUNCTION IF EXISTS public.accept_invitation(TEXT);
 DROP FUNCTION IF EXISTS public.handle_user_profile_sync();
 DROP FUNCTION IF EXISTS public.handle_updated_at();
+DROP FUNCTION IF EXISTS public.validate_active_organization_id();
+DROP FUNCTION IF EXISTS public.is_organization_member(UUID);
+DROP FUNCTION IF EXISTS public.current_active_membership();
+DROP FUNCTION IF EXISTS public.current_active_organization_id();
+DROP FUNCTION IF EXISTS public.set_current_organization_id(UUID);
+DROP FUNCTION IF EXISTS public.get_current_organization_id();
+DROP FUNCTION IF EXISTS public.create_organization_with_owner(TEXT, TEXT, TEXT);
 
 -- Drop types
 DROP TYPE IF EXISTS public.notification_type CASCADE;
@@ -47,19 +55,15 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- USER PROFILES TABLE
 -- ============================================================================
 
--- Create user_profiles table
 CREATE TABLE public.user_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     email TEXT NOT NULL,
     full_name TEXT,
     display_name TEXT,
     avatar_url TEXT,
     bio TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    
-    CONSTRAINT user_profiles_user_id_unique UNIQUE (user_id)
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
 -- Enable RLS for user_profiles
@@ -94,6 +98,10 @@ BEGIN
             NEW.id,
             NEW.email,
             COALESCE(NEW.raw_user_meta_data->>'full_name', '')
+        );
+        INSERT INTO public.user_profiles_private (user_id)
+        VALUES (
+            NEW.id
         );
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
@@ -137,6 +145,32 @@ $$;
 CREATE TRIGGER user_profiles_updated_at
     BEFORE UPDATE ON public.user_profiles
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- ============================================================================
+-- USER PROFILES PRIVATE TABLE
+-- ============================================================================
+
+-- Create user_profiles_private table
+CREATE TABLE public.user_profiles_private (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    stripe_customer_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Enable RLS for user_profiles_private
+ALTER TABLE public.user_profiles_private ENABLE ROW LEVEL SECURITY;
+
+-- Revoke all permissions from anon and authenticated roles on user_profiles_private
+-- This ensures only the service role can access sensitive data like Stripe customer IDs
+-- The handle_user_profile_sync() function can still insert because it runs with SECURITY DEFINER
+REVOKE ALL PRIVILEGES ON public.user_profiles_private FROM anon, authenticated;
+
+-- Create trigger for updated_at on user_profiles_private
+CREATE TRIGGER user_profiles_private_updated_at
+    BEFORE UPDATE ON public.user_profiles_private
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 
 -- ============================================================================
 -- SUBSCRIPTIONS TABLE
@@ -209,6 +243,7 @@ CREATE TRIGGER organizations_updated_at
     BEFORE UPDATE ON public.organizations
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+
 -- ============================================================================
 -- ORGANIZATION MEMBERS TABLE
 -- ============================================================================
@@ -216,36 +251,109 @@ CREATE TRIGGER organizations_updated_at
 -- Create enum for member role
 CREATE TYPE public.member_role AS ENUM ('owner', 'admin', 'member');
 
+
+CREATE TABLE public.organization_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    role public.member_role NOT NULL DEFAULT 'member',
+    invited_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    joined_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    
+    CONSTRAINT organization_members_unique UNIQUE (organization_id, user_id)
+);
+
+-- Enable RLS for organization_members
+ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can select thir own memberships" 
+    ON public.organization_members FOR SELECT
+    USING ((select auth.uid()) = user_id);
+
+-- ============================================================================
+-- AUTHORIZATION FUNCTIONS (needed for RLS policies)
+-- ============================================================================
+
+-- Create an optimized function that PostgreSQL will call only once per statement
+CREATE OR REPLACE FUNCTION public.current_active_membership()
+RETURNS public.organization_members
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    org_id uuid;
+    result public.organization_members;
+    current_user_id uuid;
+BEGIN
+    -- Get current user ID
+    current_user_id := auth.uid();
+    
+    -- Get the current organization ID from session config
+    org_id := public.get_current_organization_id();
+    
+    -- If no organization is set, return NULL
+    IF org_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Get the organization member record
+    SELECT om.* INTO result
+    FROM public.organization_members om
+    WHERE om.organization_id = org_id
+    AND om.user_id = current_user_id
+    LIMIT 1;
+    
+    RETURN result;
+END;
+$$;
+
+-- Helper function to just get the org ID (even more optimized)
+CREATE OR REPLACE FUNCTION public.current_active_organization_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT (public.current_active_membership()).organization_id;
+$$;
+
 -- Function to check if user has required role in organization
-CREATE OR REPLACE FUNCTION public.authorize(
-    user_id UUID,
-    organization_id UUID,
+CREATE OR REPLACE FUNCTION public.authorize_active_org(
+    organization_id UUID DEFAULT NULL,
     minimum_role public.member_role DEFAULT 'member'
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
-SECURITY DEFINER
 STABLE
 SET search_path = ''
 AS $$
 DECLARE
-    user_role public.member_role;
+    p_active_membership public.organization_members;
     role_hierarchy INTEGER;
     min_role_hierarchy INTEGER;
 BEGIN
-    -- Get user's role in the organization
-    SELECT role INTO user_role
-    FROM public.organization_members
-    WHERE organization_members.user_id = authorize.user_id
-    AND organization_members.organization_id = authorize.organization_id;
-    
-    -- If user is not a member, return false
-    IF user_role IS NULL THEN
+    -- Handle NULL organization_id - return FALSE immediately
+    IF organization_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    SELECT * INTO p_active_membership FROM public.current_active_membership();
+
+    -- Check if organization matches user's active organization
+    -- If user has no active organization, return FALSE
+    IF p_active_membership IS NULL THEN
         RETURN FALSE;
     END IF;
     
+    -- Check if the organization_id matches the active organization
+    IF organization_id <> p_active_membership.organization_id THEN
+        RETURN FALSE;
+    END IF;
+
     -- Convert roles to hierarchy numbers (higher = more permissions)
-    role_hierarchy := CASE user_role
+    role_hierarchy := CASE p_active_membership.role
         WHEN 'owner' THEN 3
         WHEN 'admin' THEN 2
         WHEN 'member' THEN 1
@@ -264,33 +372,49 @@ BEGIN
 END;
 $$;
 
-CREATE TABLE public.organization_members (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    role public.member_role NOT NULL DEFAULT 'member',
-    invited_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    joined_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+-- Function to check if user is a member of ANY organization (not just active)
+CREATE OR REPLACE FUNCTION public.is_organization_member(
+    org_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    current_user_id uuid;
+BEGIN
+    -- Get current user ID
+    current_user_id := auth.uid();
     
-    CONSTRAINT organization_members_unique UNIQUE (organization_id, user_id)
-);
+    -- Handle NULL organization_id - return FALSE immediately
+    IF org_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
 
--- Enable RLS for organization_members
-ALTER TABLE public.organization_members ENABLE ROW LEVEL SECURITY;
+    -- Return true if user has any role in the organization
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.organization_members
+        WHERE organization_id = org_id
+        AND user_id = current_user_id
+    );
+END;
+$$;
 
 -- RLS Policies for organizations and members (consolidated to avoid multiple permissive policies)
-CREATE POLICY "Users can view and manage organizations they belong to" 
+CREATE POLICY "Users can view and manage organizations their active organization" 
     ON public.organizations FOR ALL
-    USING ((select public.authorize((select auth.uid()), id, 'member')));
+    USING ((select public.authorize_active_org(id, 'member')));
 
-CREATE POLICY "Authenticated users can create organizations" 
-    ON public.organizations FOR INSERT 
-    WITH CHECK ((select auth.uid()) = created_by);
+CREATE POLICY "Users can select organizations they belong to" 
+    ON public.organizations FOR SELECT
+    USING ((select public.is_organization_member(id)));
 
 CREATE POLICY "Users can view and manage organization members for their organizations" 
     ON public.organization_members FOR ALL
-    USING ((select public.authorize((select auth.uid()), organization_id, 'member')));
+    USING ((select public.authorize_active_org(organization_id, 'admin')));
 
 -- ============================================================================
 -- INVITATIONS TABLE
@@ -321,7 +445,7 @@ ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
 -- RLS Policies for invitations (consolidated to avoid multiple permissive policies)
 CREATE POLICY "Organization members can view and manage invitations for their organization" 
     ON public.invitations FOR ALL 
-    USING ((select public.authorize((select auth.uid()), organization_id, 'member')));
+    USING ((select public.authorize_active_org(organization_id, 'member')));
 
 -- Create trigger for updated_at on invitations
 CREATE TRIGGER invitations_updated_at
@@ -361,7 +485,7 @@ CREATE POLICY "Users can view audit logs they have access to"
     ON public.audit_logs FOR SELECT 
     USING (
         (select auth.uid()) = user_id OR
-        (organization_id IS NOT NULL AND (select public.authorize((select auth.uid()), organization_id, 'member')))
+        (select public.authorize_active_org(organization_id, 'member'))
     );
 
 -- ============================================================================
@@ -430,10 +554,7 @@ CREATE POLICY "Users can view public files"
 
 CREATE POLICY "Users can view organization files they belong to" 
     ON public.files FOR SELECT 
-    USING (
-        organization_id IS NOT NULL AND 
-        (select public.authorize((select auth.uid()), organization_id, 'member'))
-    );
+    USING ((select public.authorize_active_org(organization_id, 'member')));
 
 CREATE POLICY "Users can upload their own files" 
     ON public.files FOR INSERT 
@@ -442,8 +563,7 @@ CREATE POLICY "Users can upload their own files"
 CREATE POLICY "Users can upload files to organizations they belong to" 
     ON public.files FOR INSERT 
     WITH CHECK (
-        organization_id IS NOT NULL AND 
-        (select public.authorize((select auth.uid()), organization_id, 'member')) AND
+        (select public.authorize_active_org(organization_id, 'member')) AND
         (select auth.uid()) = user_id
     );
 
@@ -454,14 +574,8 @@ CREATE POLICY "Users can update their own files"
 
 CREATE POLICY "Organization admins can update organization files" 
     ON public.files FOR UPDATE 
-    USING (
-        organization_id IS NOT NULL AND 
-        (select public.authorize((select auth.uid()), organization_id, 'admin'))
-    )
-    WITH CHECK (
-        organization_id IS NOT NULL AND 
-        (select public.authorize((select auth.uid()), organization_id, 'admin'))
-    );
+    USING ((select public.authorize_active_org(organization_id, 'admin')))
+    WITH CHECK ((select public.authorize_active_org(organization_id, 'admin')));
 
 CREATE POLICY "Users can delete their own files" 
     ON public.files FOR DELETE 
@@ -469,10 +583,7 @@ CREATE POLICY "Users can delete their own files"
 
 CREATE POLICY "Organization admins can delete organization files" 
     ON public.files FOR DELETE 
-    USING (
-        organization_id IS NOT NULL AND 
-        (select public.authorize((select auth.uid()), organization_id, 'admin'))
-    );
+    USING ((select public.authorize_active_org(organization_id, 'admin')));
 
 -- Create trigger for updated_at on files
 CREATE TRIGGER files_updated_at
@@ -482,6 +593,23 @@ CREATE TRIGGER files_updated_at
 -- ============================================================================
 -- HELPER FUNCTIONS
 -- ============================================================================
+
+-- Sets the current organization ID in session config. Pass NULL to clear.
+CREATE OR REPLACE FUNCTION public.set_current_organization_id(org_id uuid) RETURNS void AS $$
+BEGIN
+  -- Convert NULL to empty string for storage, COALESCE handles NULL input
+  PERFORM set_config('app.current_organization_id', COALESCE(org_id::text, ''), true);
+END;
+$$ LANGUAGE plpgsql VOLATILE;
+
+-- Returns the current organization ID from session config, or NULL if not set
+CREATE OR REPLACE FUNCTION public.get_current_organization_id() RETURNS uuid AS $$
+BEGIN
+  -- current_setting returns NULL if not set (with second param true)
+  -- NULLIF converts empty string to NULL as well for safety
+  RETURN NULLIF(current_setting('app.current_organization_id', true), '')::uuid;
+END;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Function to create organization with owner
 CREATE OR REPLACE FUNCTION public.create_organization_with_owner(
@@ -627,6 +755,14 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.files TO authenticated;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 
 -- Grant execute on functions
-GRANT EXECUTE ON FUNCTION public.authorize TO authenticated;
+GRANT EXECUTE ON FUNCTION public.authorize_active_org TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_organization_member TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_active_membership TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_active_organization_id TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_organization_with_owner TO authenticated;
 GRANT EXECUTE ON FUNCTION public.accept_invitation TO authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_user_profile_sync TO authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_updated_at TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_current_organization_id TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_current_organization_id TO authenticated;
+

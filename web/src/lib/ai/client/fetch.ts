@@ -1,4 +1,4 @@
-import type { AiRequestBody } from "../types";
+import type { AiRequestBody } from '../types';
 
 export const fetchAi = async (apiPath: string, body?: AiRequestBody) => {
 	return await fetch(apiPath, {

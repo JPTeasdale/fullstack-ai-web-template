@@ -1,10 +1,10 @@
 <script lang="ts">
 	import Button from './ui/button/button.svelte';
 	import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
-	import { URL_API_SIGNOUT } from '$lib/url';
 	import { APP_NAME } from '$lib/app/constants';
 	import AppIcon from '$lib/app/AppIcon.svelte';
 	import type { User } from '@supabase/supabase-js';
+	import type { Tables } from '$lib/types/generated/supabase.types';
 
 	const {
 		user,
@@ -58,7 +58,17 @@
 				<PopoverContent class="mr-2">
 					<Button
 						variant="ghost"
-						class="text-destructive block w-full px-4 py-2 text-left text-sm"
+						class="w-full block px-4 text-left"
+						role="menuitem"
+						tabindex={-1}
+						id="user-menu-item-1"
+						href="/orgs"
+					>
+						Switch to Organization View
+					</Button>
+					<Button
+						variant="ghost"
+						class="text-destructive block w-full px-4 text-left"
 						role="menuitem"
 						tabindex={-1}
 						id="user-menu-item-1"

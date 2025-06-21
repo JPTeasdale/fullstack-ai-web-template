@@ -158,12 +158,12 @@
 						<div class="message-wrapper">
 							<Message message={item} />
 						</div>
-						{:else if item.type === 'image_generation_call'}
-							<ImageGeneration {item} />
+					{:else if item.type === 'image_generation_call'}
+						<ImageGeneration {item} />
 					{:else if item.type === 'web_search_call' || item.type === 'file_search_call'}
 						<ToolCall {item} />
-						{:else if item.type === 'mcp_approval_request'}
-							{console.error("UNIMPLEMENTED: MCP Approval Request", {item})}
+					{:else if item.type === 'mcp_approval_request'}
+						{console.error('UNIMPLEMENTED: MCP Approval Request', { item })}
 					{/if}
 				</div>
 			{/each}

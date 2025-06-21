@@ -8,7 +8,7 @@
 	<Header />
 	<main class="flex w-full flex-1 flex-col">
 		<div class="flex h-full w-full flex-row items-center justify-center">
-			<div class="w-md flex flex-col items-center justify-center gap-2">
+			<div class="flex w-md flex-col items-center justify-center gap-2">
 				{@render children()}
 			</div>
 		</div>

@@ -94,8 +94,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		console.error('Webhook signature verification failed:', err);
 		return json({ error: 'Invalid signature' }, { status: 400 });
 	}
-	console.log(event.type, {event});    
-
+	console.log(event.type, { event });
 
 	// Only handle specific event types
 	const relevantEvents: RelevantEvent[] = [
@@ -114,7 +113,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		switch (event.type) {
 			case 'checkout.session.completed': {
 				const session = event.data.object as Stripe.Checkout.Session;
-				
+
 				if (session.mode !== 'subscription' || !session.subscription) {
 					break;
 				}
@@ -126,21 +125,34 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				}
 
 				// Retrieve the subscription details
-				const subscription: any = await stripe.subscriptions.retrieve(session.subscription as string);
+				const subscription: any = await stripe.subscriptions.retrieve(
+					session.subscription as string
+				);
 				const metadata = getSubscriptionMetadata(subscription);
-				
-				await supabaseAdmin.from('subscriptions').update({
-					user_id: metadata.appUserId,
-					stripe_subscription_id: subscription.id,
-					stripe_customer_id: subscription.customer as string,
-					stripe_price_id: subscription.items.data[0]?.price.id,
-					status: mapStripeStatus(subscription.status),
-					current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
-					current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
-					trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
-					cancel_at_period_end: subscription.cancel_at_period_end || false,
-					canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null
-				}).eq('id', metadata.appSubscriptionId);
+
+				await supabaseAdmin
+					.from('subscriptions')
+					.update({
+						user_id: metadata.appUserId,
+						stripe_subscription_id: subscription.id,
+						stripe_customer_id: subscription.customer as string,
+						stripe_price_id: subscription.items.data[0]?.price.id,
+						status: mapStripeStatus(subscription.status),
+						current_period_start: subscription.current_period_start
+							? new Date(subscription.current_period_start * 1000).toISOString()
+							: null,
+						current_period_end: subscription.current_period_end
+							? new Date(subscription.current_period_end * 1000).toISOString()
+							: null,
+						trial_end: subscription.trial_end
+							? new Date(subscription.trial_end * 1000).toISOString()
+							: null,
+						cancel_at_period_end: subscription.cancel_at_period_end || false,
+						canceled_at: subscription.canceled_at
+							? new Date(subscription.canceled_at * 1000).toISOString()
+							: null
+					})
+					.eq('id', metadata.appSubscriptionId);
 
 				console.log(`Created subscription for user ${userId} from checkout session ${session.id}`);
 				break;
@@ -162,14 +174,24 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					stripe_customer_id: subscription.customer as string,
 					stripe_price_id: subscription.items.data[0]?.price.id,
 					status: mapStripeStatus(subscription.status),
-					current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
-					current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
-					trial_end: subscription.trial_end ? new Date(subscription.trial_end * 1000).toISOString() : null,
+					current_period_start: subscription.current_period_start
+						? new Date(subscription.current_period_start * 1000).toISOString()
+						: null,
+					current_period_end: subscription.current_period_end
+						? new Date(subscription.current_period_end * 1000).toISOString()
+						: null,
+					trial_end: subscription.trial_end
+						? new Date(subscription.trial_end * 1000).toISOString()
+						: null,
 					cancel_at_period_end: subscription.cancel_at_period_end || false,
-					canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null
+					canceled_at: subscription.canceled_at
+						? new Date(subscription.canceled_at * 1000).toISOString()
+						: null
 				});
 
-				console.log(`${event.type === 'customer.subscription.created' ? 'Created' : 'Updated'} subscription for user ${userId}`);
+				console.log(
+					`${event.type === 'customer.subscription.created' ? 'Created' : 'Updated'} subscription for user ${userId}`
+				);
 				break;
 			}
 
@@ -190,7 +212,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 			case 'invoice.payment_succeeded': {
 				const invoice = event.data.object as Stripe.Invoice;
-				
+
 				// Check if this invoice is related to a subscription
 				const subscriptionId = (invoice as any).subscription;
 				if (!subscriptionId) {
@@ -199,13 +221,17 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 				// Update subscription with latest period info
 				const subscription: any = await stripe.subscriptions.retrieve(subscriptionId as string);
-				
+
 				await supabaseAdmin
 					.from('subscriptions')
 					.update({
 						status: mapStripeStatus(subscription.status),
-						current_period_start: subscription.current_period_start ? new Date(subscription.current_period_start * 1000).toISOString() : null,
-						current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null
+						current_period_start: subscription.current_period_start
+							? new Date(subscription.current_period_start * 1000).toISOString()
+							: null,
+						current_period_end: subscription.current_period_end
+							? new Date(subscription.current_period_end * 1000).toISOString()
+							: null
 					})
 					.eq('stripe_subscription_id', subscription.id);
 
@@ -215,7 +241,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 			case 'invoice.payment_failed': {
 				const invoice = event.data.object as Stripe.Invoice;
-				
+
 				// Check if this invoice is related to a subscription
 				const subscriptionId = (invoice as any).subscription;
 				if (!subscriptionId) {

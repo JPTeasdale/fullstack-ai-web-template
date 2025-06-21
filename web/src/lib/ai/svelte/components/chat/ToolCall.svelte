@@ -15,7 +15,7 @@
 			case 'file_search_call':
 				return 'File Search';
 			default:
-				return 'Tool Call';	
+				return 'Tool Call';
 		}
 	});
 
@@ -44,7 +44,7 @@
 	<div class="flex flex-row items-center justify-between">
 		<div class="flex flex-row items-center gap-2">
 			<div class="flex flex-row items-center gap-1">
-				<div class="w-2 h-2 rounded" style:background-color={statusColor}></div>
+				<div class="h-2 w-2 rounded" style:background-color={statusColor}></div>
 			</div>
 			<div class="tool-name">
 				{displayName}

@@ -69,7 +69,7 @@
 	class:duration-250={isCollapsed || !isResizing}
 >
 	<div
-		class="absolute -left-0.5 bottom-0 top-0 z-10 flex cursor-ew-resize items-center"
+		class="absolute top-0 bottom-0 -left-0.5 z-10 flex cursor-ew-resize items-center"
 		role="separator"
 		aria-orientation="horizontal"
 		tabindex="-1"
@@ -97,7 +97,7 @@
 	{#if !isCollapsed}
 		<div
 			in:fade={{ delay: 100 }}
-			class="fixed bottom-0 right-0 top-0 overflow-hidden border-l border-gray-200 bg-white shadow-lg"
+			class="fixed top-0 right-0 bottom-0 overflow-hidden border-l border-gray-200 bg-white shadow-lg"
 			style:width={isCollapsed ? '0' : sidebarWidth + 'px'}
 			style:min-width={isCollapsed ? '0' : sidebarWidth + 'px'}
 			style:max-width={isCollapsed ? '0' : sidebarWidth + 'px'}

@@ -8,7 +8,7 @@ export const load: LayoutServerLoad = async () => {
 	if (!dev) {
 		throw error(404, 'Not found');
 	}
-	
+
 	// In development, allow the routes to load normally
 	return {};
-}; 
+};

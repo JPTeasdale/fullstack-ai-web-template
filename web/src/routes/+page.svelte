@@ -386,7 +386,7 @@
 				<div class="flex flex-col items-center gap-8 lg:flex-row lg:gap-12">
 					<div class="flex-shrink-0">
 						<div
-							class="bg-primary/20 border-primary/30 mx-auto flex h-32 w-32 items-center justify-center rounded-full overflow-hidden"
+							class="bg-primary/20 border-primary/30 mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-full"
 						>
 							<img
 								src="https://johnteasdale.com/_app/immutable/assets/avatar.Db7Vnf1A.jpg"
@@ -401,7 +401,7 @@
 						<p class="text-muted-foreground mt-4 text-lg leading-relaxed">
 							After building dozens of web applications over the years, I got completely exhausted
 							by the same repetitive setup process. Every. Single. Time.
-						</p> 
+						</p>
 						<p class="text-muted-foreground mt-4 leading-relaxed">
 							Setting up authentication, integrating Stripe payments, configuring analytics,
 							implementing security measures, setting up deployment pipelines... All before I could

@@ -5,7 +5,7 @@
 		ResponseOutputMessage
 	} from 'openai/resources/responses/responses';
 	import TextAnnotations from './TextAnnotations.svelte';
-	
+
 	const props: {
 		message: ResponseOutputMessage | ResponseInputMessageItem;
 	} = $props();
@@ -24,7 +24,7 @@
 						{:else if content.type === 'input_image'}
 							<img src={content.image_url} alt={content.detail} />
 						{:else if content.type === 'input_file'}
-							<div class="bg-gray-100 rounded-lg p-2 px-4">
+							<div class="rounded-lg bg-gray-100 p-2 px-4">
 								{content.filename}
 							</div>
 						{/if}
@@ -70,7 +70,6 @@
 		flex-direction: row;
 	}
 	.content {
-		white-space: pre-wrap;
 		overflow-wrap: break-word;
 	}
 

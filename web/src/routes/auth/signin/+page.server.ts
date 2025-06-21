@@ -52,7 +52,6 @@ export const actions: Actions = {
 
 			// Session is established successfully - cookies will be set by the Supabase client
 			// No need to verify again since we have valid session data from signInWithPassword
-
 		} catch (error) {
 			return fail(500, {
 				error: 'An unexpected error occurred. Please try again.',

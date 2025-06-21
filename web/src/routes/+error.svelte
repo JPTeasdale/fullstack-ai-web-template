@@ -60,7 +60,7 @@
 
 			{#if errorMessage !== getErrorDescription(status)}
 				<div class="bg-card border-border rounded-lg border p-4">
-					<p class="text-muted-foreground break-words font-mono text-sm">
+					<p class="text-muted-foreground font-mono text-sm break-words">
 						{errorMessage}
 					</p>
 				</div>
@@ -80,7 +80,7 @@
 				Need help?
 				<a
 					href="/contact"
-					class="text-primary focus:ring-ring focus:ring-offset-background rounded hover:underline focus:outline-none focus:ring-2 focus:ring-offset-2"
+					class="text-primary focus:ring-ring focus:ring-offset-background rounded hover:underline focus:ring-2 focus:ring-offset-2 focus:outline-none"
 				>
 					Contact Support
 				</a>

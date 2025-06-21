@@ -328,7 +328,6 @@ export type Database = {
           display_name: string | null
           email: string
           full_name: string | null
-          id: string
           updated_at: string
           user_id: string
         }
@@ -339,7 +338,6 @@ export type Database = {
           display_name?: string | null
           email: string
           full_name?: string | null
-          id?: string
           updated_at?: string
           user_id: string
         }
@@ -350,7 +348,27 @@ export type Database = {
           display_name?: string | null
           email?: string
           full_name?: string | null
-          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles_private: {
+        Row: {
+          created_at: string
+          stripe_customer_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -365,10 +383,9 @@ export type Database = {
         Args: { invitation_token: string }
         Returns: boolean
       }
-      authorize: {
+      authorize_active_org: {
         Args: {
-          user_id: string
-          organization_id: string
+          organization_id?: string
           minimum_role?: Database["public"]["Enums"]["member_role"]
         }
         Returns: boolean
@@ -376,6 +393,34 @@ export type Database = {
       create_organization_with_owner: {
         Args: { org_name: string; org_slug: string; org_description?: string }
         Returns: string
+      }
+      current_active_membership: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          joined_at: string
+          organization_id: string
+          role: Database["public"]["Enums"]["member_role"]
+          user_id: string
+        }
+      }
+      current_active_organization_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_organization_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_organization_member: {
+        Args: { org_id: string }
+        Returns: boolean
+      }
+      set_current_organization_id: {
+        Args: { org_id: string }
+        Returns: undefined
       }
     }
     Enums: {

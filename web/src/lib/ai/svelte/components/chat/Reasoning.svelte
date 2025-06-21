@@ -11,7 +11,7 @@
 
 {#if item.status === 'in_progress'}
 	<div out:fade={{ duration: 100 }}>Reasoning...</div>
-	<div class="reasoning-container">	
+	<div class="reasoning-container">
 		<div class="reasoning-content">
 			{#each item.summary as summary}
 				<div class="reasoning-step">

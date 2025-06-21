@@ -7,7 +7,6 @@ import {
 import { URL_CONFIRM_SUBSCRIPTION_STRIPE_TEMPLATE, URL_DASHBOARD } from '$lib/url';
 import type { ServerLoadEvent } from '@sveltejs/kit';
 
-
 interface AppSubscriptionOptions {
 	type: AppSubscriptionType;
 }

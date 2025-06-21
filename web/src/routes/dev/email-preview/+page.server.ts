@@ -1,11 +1,11 @@
-import { getEmailConfirmTemplate } from "$lib/email/templates/email_confirm"
-import { getInviteGenericTemplate } from "$lib/email/templates/invite_generic"
-import { getInviteToOrgTemplate } from "$lib/email/templates/invite_to_org"
-import { getMagicLinkTemplate } from "$lib/email/templates/magic_link"
-import { getEmailOtpTemplate } from "$lib/email/templates/otp_login_code"
-import { getPasswordResetTemplate } from "$lib/email/templates/password_reset"
+import { getEmailConfirmTemplate } from '$lib/email/templates/email_confirm';
+import { getInviteGenericTemplate } from '$lib/email/templates/invite_generic';
+import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
+import { getMagicLinkTemplate } from '$lib/email/templates/magic_link';
+import { getEmailOtpTemplate } from '$lib/email/templates/otp_login_code';
+import { getPasswordResetTemplate } from '$lib/email/templates/password_reset';
 
-export async function load({url}: {url: URL}) {
+export async function load({ url }: { url: URL }) {
 	// return the list of email components
 
 	const templates = {
@@ -39,13 +39,12 @@ export async function load({url}: {url: URL}) {
 			magicLink: `${url.origin}/auth/magic-link?token=123456`,
 			email: 'test@test.com'
 		})
-	}
+	};
 
 	return {
 		templates: Object.entries(templates).map(([name, template]) => ({
 			name,
 			...template
 		}))
-	}
+	};
 }
-

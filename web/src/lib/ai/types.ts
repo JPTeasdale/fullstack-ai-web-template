@@ -5,7 +5,7 @@ import type {
 	ResponseOutputText,
 	ResponseFileSearchToolCall,
 	ResponseFunctionWebSearch
-	} from 'openai/resources/responses/responses';
+} from 'openai/resources/responses/responses';
 import type { Response } from 'openai/resources/responses/responses';
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses';
 import type { Stream } from 'openai/streaming';
@@ -22,9 +22,13 @@ export type ServerConversationItem = ResponseOutputItem;
 
 export type ConversationItem = ServerConversationItem | ResponseInputMessageItem;
 
-export type TextAnnotation = ResponseOutputText.FileCitation | ResponseOutputText.URLCitation | ResponseOutputText.ContainerFileCitation | ResponseOutputText.FilePath;
+export type TextAnnotation =
+	| ResponseOutputText.FileCitation
+	| ResponseOutputText.URLCitation
+	| ResponseOutputText.ContainerFileCitation
+	| ResponseOutputText.FilePath;
 
-export type ToolCall =  ResponseFunctionWebSearch | ResponseFileSearchToolCall;
+export type ToolCall = ResponseFunctionWebSearch | ResponseFileSearchToolCall;
 
 export type AiToolResult = {
 	callId: string;
@@ -55,15 +59,12 @@ export type AiFunctionCallDefinition<Name extends string, Args extends Record<st
 	argsPartial: Partial<Args>;
 };
 
-
 export type AiFunctionCallDefinitions =
 	| AiFunctionCallDefinitionExampleCreateTodo
 	| AiFunctionCallDefinitionExampleUpdateTodo;
 
 export type FunctionCallMap<T extends AiFunctionCallDefinitions> = {
-	[key in T['name']]: (
-		args: T['args']
-	) => Promise<string>;
+	[key in T['name']]: (args: T['args']) => Promise<string>;
 };
 
 export type FunctionName<T extends AiFunctionCallDefinitions> = T['name'];

@@ -134,28 +134,35 @@ $$;
 ALTER FUNCTION "public"."accept_invitation"("invitation_token" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."authorize"("user_id" "uuid", "organization_id" "uuid", "minimum_role" "public"."member_role" DEFAULT 'member'::"public"."member_role") RETURNS boolean
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+CREATE OR REPLACE FUNCTION "public"."authorize_active_org"("organization_id" "uuid" DEFAULT NULL::"uuid", "minimum_role" "public"."member_role" DEFAULT 'member'::"public"."member_role") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE
     SET "search_path" TO ''
     AS $$
 DECLARE
-    user_role public.member_role;
+    p_active_membership public.organization_members;
     role_hierarchy INTEGER;
     min_role_hierarchy INTEGER;
 BEGIN
-    -- Get user's role in the organization
-    SELECT role INTO user_role
-    FROM public.organization_members
-    WHERE organization_members.user_id = authorize.user_id
-    AND organization_members.organization_id = authorize.organization_id;
-    
-    -- If user is not a member, return false
-    IF user_role IS NULL THEN
+    -- Handle NULL organization_id - return FALSE immediately
+    IF organization_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    SELECT * INTO p_active_membership FROM public.current_active_membership();
+
+    -- Check if organization matches user's active organization
+    -- If user has no active organization, return FALSE
+    IF p_active_membership IS NULL THEN
         RETURN FALSE;
     END IF;
     
+    -- Check if the organization_id matches the active organization
+    IF organization_id <> p_active_membership.organization_id THEN
+        RETURN FALSE;
+    END IF;
+
     -- Convert roles to hierarchy numbers (higher = more permissions)
-    role_hierarchy := CASE user_role
+    role_hierarchy := CASE p_active_membership.role
         WHEN 'owner' THEN 3
         WHEN 'admin' THEN 2
         WHEN 'member' THEN 1
@@ -175,7 +182,7 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."authorize"("user_id" "uuid", "organization_id" "uuid", "minimum_role" "public"."member_role") OWNER TO "postgres";
+ALTER FUNCTION "public"."authorize_active_org"("organization_id" "uuid", "minimum_role" "public"."member_role") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."create_organization_with_owner"("org_name" "text", "org_slug" "text", "org_description" "text" DEFAULT NULL::"text") RETURNS "uuid"
@@ -205,6 +212,83 @@ $$;
 
 ALTER FUNCTION "public"."create_organization_with_owner"("org_name" "text", "org_slug" "text", "org_description" "text") OWNER TO "postgres";
 
+SET default_tablespace = '';
+
+SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."organization_members" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "organization_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "role" "public"."member_role" DEFAULT 'member'::"public"."member_role" NOT NULL,
+    "invited_by" "uuid",
+    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."organization_members" OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."current_active_membership"() RETURNS "public"."organization_members"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET search_path = ''
+    AS $$
+DECLARE
+    org_id uuid;
+    result public.organization_members;
+    current_user_id uuid;
+BEGIN
+    -- Get current user ID
+    current_user_id := auth.uid();
+    
+    -- Get the current organization ID from session config
+    org_id := public.get_current_organization_id();
+    
+    -- If no organization is set, return NULL
+    IF org_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Get the organization member record
+    SELECT om.* INTO result
+    FROM public.organization_members om
+    WHERE om.organization_id = org_id
+    AND om.user_id = current_user_id
+    LIMIT 1;
+    
+    RETURN result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."current_active_membership"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."current_active_organization_id"() RETURNS "uuid"
+    LANGUAGE "sql" STABLE
+    AS $$
+    SELECT (public.current_active_membership()).organization_id;
+$$;
+
+
+ALTER FUNCTION "public"."current_active_organization_id"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_current_organization_id"() RETURNS "uuid"
+    LANGUAGE "plpgsql" STABLE
+    AS $$
+BEGIN
+  -- current_setting returns NULL if not set (with second param true)
+  -- NULLIF converts empty string to NULL as well for safety
+  RETURN NULLIF(current_setting('app.current_organization_id', true), '')::uuid;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_current_organization_id"() OWNER TO "postgres";
+
 
 CREATE OR REPLACE FUNCTION "public"."handle_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
@@ -233,6 +317,10 @@ BEGIN
             NEW.email,
             COALESCE(NEW.raw_user_meta_data->>'full_name', '')
         );
+        INSERT INTO public.user_profiles_private (user_id)
+        VALUES (
+            NEW.id
+        );
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
         -- Update email in profile when auth.users email changes
@@ -253,9 +341,47 @@ $$;
 
 ALTER FUNCTION "public"."handle_user_profile_sync"() OWNER TO "postgres";
 
-SET default_tablespace = '';
 
-SET default_table_access_method = "heap";
+CREATE OR REPLACE FUNCTION "public"."is_organization_member"("org_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+    current_user_id uuid;
+BEGIN
+    -- Get current user ID
+    current_user_id := auth.uid();
+    
+    -- Handle NULL organization_id - return FALSE immediately
+    IF org_id IS NULL THEN
+        RETURN FALSE;
+    END IF;
+
+    -- Return true if user has any role in the organization
+    RETURN EXISTS (
+        SELECT 1
+        FROM public.organization_members
+        WHERE organization_id = org_id
+        AND user_id = current_user_id
+    );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."is_organization_member"("org_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."set_current_organization_id"("org_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  -- Convert NULL to empty string for storage, COALESCE handles NULL input
+  PERFORM set_config('app.current_organization_id', COALESCE(org_id::text, ''), true);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."set_current_organization_id"("org_id" "uuid") OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
@@ -330,20 +456,6 @@ CREATE TABLE IF NOT EXISTS "public"."notifications" (
 ALTER TABLE "public"."notifications" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."organization_members" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "organization_id" "uuid" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "role" "public"."member_role" DEFAULT 'member'::"public"."member_role" NOT NULL,
-    "invited_by" "uuid",
-    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "public"."organization_members" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."organizations" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text" NOT NULL,
@@ -381,7 +493,6 @@ ALTER TABLE "public"."subscriptions" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "email" "text" NOT NULL,
     "full_name" "text",
@@ -394,6 +505,17 @@ CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
 
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_profiles_private" (
+    "user_id" "uuid" NOT NULL,
+    "stripe_customer_id" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."user_profiles_private" OWNER TO "postgres";
 
 
 ALTER TABLE ONLY "public"."audit_logs"
@@ -462,12 +584,12 @@ ALTER TABLE ONLY "public"."subscriptions"
 
 
 ALTER TABLE ONLY "public"."user_profiles"
-    ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id");
+    ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("user_id");
 
 
 
-ALTER TABLE ONLY "public"."user_profiles"
-    ADD CONSTRAINT "user_profiles_user_id_unique" UNIQUE ("user_id");
+ALTER TABLE ONLY "public"."user_profiles_private"
+    ADD CONSTRAINT "user_profiles_private_pkey" PRIMARY KEY ("user_id");
 
 
 
@@ -599,6 +721,10 @@ CREATE OR REPLACE TRIGGER "subscriptions_updated_at" BEFORE UPDATE ON "public"."
 
 
 
+CREATE OR REPLACE TRIGGER "user_profiles_private_updated_at" BEFORE UPDATE ON "public"."user_profiles_private" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+
+
+
 CREATE OR REPLACE TRIGGER "user_profiles_updated_at" BEFORE UPDATE ON "public"."user_profiles" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
 
 
@@ -663,24 +789,25 @@ ALTER TABLE ONLY "public"."subscriptions"
 
 
 
+ALTER TABLE ONLY "public"."user_profiles_private"
+    ADD CONSTRAINT "user_profiles_private_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
-CREATE POLICY "Authenticated users can create organizations" ON "public"."organizations" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "created_by"));
+CREATE POLICY "Organization admins can delete organization files" ON "public"."files" FOR DELETE USING (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org"));
 
 
 
-CREATE POLICY "Organization admins can delete organization files" ON "public"."files" FOR DELETE USING ((("organization_id" IS NOT NULL) AND ( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "files"."organization_id", 'admin'::"public"."member_role") AS "authorize")));
+CREATE POLICY "Organization admins can update organization files" ON "public"."files" FOR UPDATE USING (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org")) WITH CHECK (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org"));
 
 
 
-CREATE POLICY "Organization admins can update organization files" ON "public"."files" FOR UPDATE USING ((("organization_id" IS NOT NULL) AND ( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "files"."organization_id", 'admin'::"public"."member_role") AS "authorize"))) WITH CHECK ((("organization_id" IS NOT NULL) AND ( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "files"."organization_id", 'admin'::"public"."member_role") AS "authorize")));
-
-
-
-CREATE POLICY "Organization members can view and manage invitations for their " ON "public"."invitations" USING (( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "invitations"."organization_id", 'member'::"public"."member_role") AS "authorize"));
+CREATE POLICY "Organization members can view and manage invitations for their " ON "public"."invitations" USING (( SELECT "public"."authorize_active_org"("invitations"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org"));
 
 
 
@@ -696,6 +823,10 @@ CREATE POLICY "Users can manage their own notifications" ON "public"."notificati
 
 
 
+CREATE POLICY "Users can select organizations they belong to" ON "public"."organizations" FOR SELECT USING (( SELECT "public"."is_organization_member"("organizations"."id") AS "is_organization_member"));
+
+
+
 CREATE POLICY "Users can update their own files" ON "public"."files" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 
@@ -704,7 +835,7 @@ CREATE POLICY "Users can update their own profile" ON "public"."user_profiles" F
 
 
 
-CREATE POLICY "Users can upload files to organizations they belong to" ON "public"."files" FOR INSERT WITH CHECK ((("organization_id" IS NOT NULL) AND ( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "files"."organization_id", 'member'::"public"."member_role") AS "authorize") AND (( SELECT "auth"."uid"() AS "uid") = "user_id")));
+CREATE POLICY "Users can upload files to organizations they belong to" ON "public"."files" FOR INSERT WITH CHECK ((( SELECT "public"."authorize_active_org"("files"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org") AND (( SELECT "auth"."uid"() AS "uid") = "user_id")));
 
 
 
@@ -712,19 +843,19 @@ CREATE POLICY "Users can upload their own files" ON "public"."files" FOR INSERT 
 
 
 
-CREATE POLICY "Users can view and manage organization members for their organi" ON "public"."organization_members" USING (( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "organization_members"."organization_id", 'member'::"public"."member_role") AS "authorize"));
+CREATE POLICY "Users can view and manage organization members for their organi" ON "public"."organization_members" USING (( SELECT "public"."authorize_active_org"("organization_members"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org"));
 
 
 
-CREATE POLICY "Users can view and manage organizations they belong to" ON "public"."organizations" USING (( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "organizations"."id", 'member'::"public"."member_role") AS "authorize"));
+CREATE POLICY "Users can view and manage organizations their active organizati" ON "public"."organizations" USING (( SELECT "public"."authorize_active_org"("organizations"."id", 'member'::"public"."member_role") AS "authorize_active_org"));
 
 
 
-CREATE POLICY "Users can view audit logs they have access to" ON "public"."audit_logs" FOR SELECT USING (((( SELECT "auth"."uid"() AS "uid") = "user_id") OR (("organization_id" IS NOT NULL) AND ( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "audit_logs"."organization_id", 'member'::"public"."member_role") AS "authorize"))));
+CREATE POLICY "Users can view audit logs they have access to" ON "public"."audit_logs" FOR SELECT USING (((( SELECT "auth"."uid"() AS "uid") = "user_id") OR ( SELECT "public"."authorize_active_org"("audit_logs"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org")));
 
 
 
-CREATE POLICY "Users can view organization files they belong to" ON "public"."files" FOR SELECT USING ((("organization_id" IS NOT NULL) AND ( SELECT "public"."authorize"(( SELECT "auth"."uid"() AS "uid"), "files"."organization_id", 'member'::"public"."member_role") AS "authorize")));
+CREATE POLICY "Users can view organization files they belong to" ON "public"."files" FOR SELECT USING (( SELECT "public"."authorize_active_org"("files"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org"));
 
 
 
@@ -768,6 +899,9 @@ ALTER TABLE "public"."subscriptions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."user_profiles_private" ENABLE ROW LEVEL SECURITY;
+
+
 GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
@@ -781,15 +915,39 @@ GRANT ALL ON FUNCTION "public"."accept_invitation"("invitation_token" "text") TO
 
 
 
-GRANT ALL ON FUNCTION "public"."authorize"("user_id" "uuid", "organization_id" "uuid", "minimum_role" "public"."member_role") TO "anon";
-GRANT ALL ON FUNCTION "public"."authorize"("user_id" "uuid", "organization_id" "uuid", "minimum_role" "public"."member_role") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."authorize"("user_id" "uuid", "organization_id" "uuid", "minimum_role" "public"."member_role") TO "service_role";
+GRANT ALL ON FUNCTION "public"."authorize_active_org"("organization_id" "uuid", "minimum_role" "public"."member_role") TO "anon";
+GRANT ALL ON FUNCTION "public"."authorize_active_org"("organization_id" "uuid", "minimum_role" "public"."member_role") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."authorize_active_org"("organization_id" "uuid", "minimum_role" "public"."member_role") TO "service_role";
 
 
 
 GRANT ALL ON FUNCTION "public"."create_organization_with_owner"("org_name" "text", "org_slug" "text", "org_description" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."create_organization_with_owner"("org_name" "text", "org_slug" "text", "org_description" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."create_organization_with_owner"("org_name" "text", "org_slug" "text", "org_description" "text") TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."organization_members" TO "anon";
+GRANT ALL ON TABLE "public"."organization_members" TO "authenticated";
+GRANT ALL ON TABLE "public"."organization_members" TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."current_active_membership"() TO "anon";
+GRANT ALL ON FUNCTION "public"."current_active_membership"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."current_active_membership"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."current_active_organization_id"() TO "anon";
+GRANT ALL ON FUNCTION "public"."current_active_organization_id"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."current_active_organization_id"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_current_organization_id"() TO "anon";
+GRANT ALL ON FUNCTION "public"."get_current_organization_id"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_current_organization_id"() TO "service_role";
 
 
 
@@ -802,6 +960,18 @@ GRANT ALL ON FUNCTION "public"."handle_updated_at"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."handle_user_profile_sync"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_user_profile_sync"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_user_profile_sync"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."is_organization_member"("org_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."is_organization_member"("org_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."is_organization_member"("org_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_current_organization_id"("org_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."set_current_organization_id"("org_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_current_organization_id"("org_id" "uuid") TO "service_role";
 
 
 
@@ -829,12 +999,6 @@ GRANT ALL ON TABLE "public"."notifications" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."organization_members" TO "anon";
-GRANT ALL ON TABLE "public"."organization_members" TO "authenticated";
-GRANT ALL ON TABLE "public"."organization_members" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."organizations" TO "anon";
 GRANT ALL ON TABLE "public"."organizations" TO "authenticated";
 GRANT ALL ON TABLE "public"."organizations" TO "service_role";
@@ -850,6 +1014,10 @@ GRANT ALL ON TABLE "public"."subscriptions" TO "service_role";
 GRANT ALL ON TABLE "public"."user_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."user_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_profiles_private" TO "service_role";
 
 
 

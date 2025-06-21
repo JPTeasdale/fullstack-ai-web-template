@@ -2,7 +2,6 @@ import Stripe from 'stripe';
 
 import { STRIPE_SECRET_KEY } from '$env/static/private';
 
-
 export function getStripe() {
 	return new Stripe(STRIPE_SECRET_KEY, {
 		apiVersion: '2025-05-28.basil'
@@ -31,10 +30,10 @@ export function makeSubscriptionMetadata(metadata: StripeSubscriptionMetadata) {
 
 // Price Types
 
-// Price ids vary between environments in Stripe, so we use metadata to fetch 
+// Price ids vary between environments in Stripe, so we use metadata to fetch
 // the price id across environments.
 
-// These metadata strings must be attached to a price object in stripe. 
+// These metadata strings must be attached to a price object in stripe.
 export type AppSubscriptionType = 'basic_weekly' | 'basic_yearly' | 'pro_weekly' | 'pro_yearly';
 
 export async function fetchPriceId(client: Stripe, type: AppSubscriptionType) {

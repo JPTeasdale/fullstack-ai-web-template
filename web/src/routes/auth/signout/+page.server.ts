@@ -6,7 +6,7 @@ export const load: PageServerLoad = async ({ locals: { session, supabase } }) =>
 		throw redirect(302, '/');
 	}
 
-    await supabase.auth.signOut();
+	await supabase.auth.signOut();
 
 	throw redirect(302, '/');
 };

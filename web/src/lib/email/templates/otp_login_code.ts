@@ -22,7 +22,7 @@ export function getEmailOtpTemplate({ token, email, appUrl }: EmailOtpTemplate) 
 		EmailContent(
 			EmailParagraph(`This is your one-time password for ${APP_NAME}.`),
 			EmailTitle(token),
-            EmailParagraph(`Please return to ${appUrl} and enter this code to login.`),
+			EmailParagraph(`Please return to ${appUrl} and enter this code to login.`),
 
 			EmailSmallText(`If you didn't try to login, you can safely ignore this email.`)
 		),

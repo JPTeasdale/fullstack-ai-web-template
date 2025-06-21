@@ -65,7 +65,8 @@ export const actions: Actions = {
 			if (data.user && !data.session) {
 				return {
 					success: true,
-					message: 'Please check your email and click the confirmation link to complete your registration.',
+					message:
+						'Please check your email and click the confirmation link to complete your registration.',
 					email
 				};
 			}
@@ -81,7 +82,6 @@ export const actions: Actions = {
 				message: 'Account created successfully! Please check your email to confirm your account.',
 				email
 			};
-
 		} catch (error) {
 			return fail(500, {
 				error: 'An unexpected error occurred. Please try again.',
