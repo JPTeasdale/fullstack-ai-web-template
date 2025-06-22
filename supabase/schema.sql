@@ -25,8 +25,10 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 CREATE TYPE "public"."app_subscription_type" AS ENUM (
     'basic_weekly',
+    'basic_monthly',
     'basic_yearly',
     'pro_weekly',
+    'pro_monthly',
     'pro_yearly'
 );
 
@@ -88,13 +90,13 @@ ALTER TYPE "public"."notification_type" OWNER TO "postgres";
 
 CREATE TYPE "public"."subscription_status" AS ENUM (
     'incomplete',
-    'incomplete_expired',
     'trialing',
     'active',
     'paused',
     'past_due',
     'canceled',
-    'unpaid'
+    'unpaid',
+    'will_expire'
 );
 
 
@@ -388,7 +390,7 @@ CREATE OR REPLACE FUNCTION "public"."set_current_organization_id"("org_id" "uuid
     AS $$
 BEGIN
   -- Convert NULL to empty string for storage, COALESCE handles NULL input
-  PERFORM set_config('app.current_organization_id', COALESCE(org_id::text, ''), true);
+  PERFORM set_config('app.current_organization_id', COALESCE(org_id::text, ''), false);
 END;
 $$;
 
@@ -891,7 +893,7 @@ CREATE POLICY "Users can view public files" ON "public"."files" FOR SELECT USING
 
 
 
-CREATE POLICY "Users can view their organization's subscription" ON "public"."subscriptions" FOR SELECT USING (( SELECT "public"."authorize_active_org"("subscriptions"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org"));
+CREATE POLICY "Users can view their organization's subscription" ON "public"."subscriptions" FOR SELECT USING ((("user_id" IS NULL) AND ( SELECT "public"."authorize_active_org"("subscriptions"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org")));
 
 
 

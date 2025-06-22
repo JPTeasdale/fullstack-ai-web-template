@@ -167,11 +167,40 @@
 					{#if data.subscription.cancel_at_period_end}
 						<div class="col-span-full">
 							<div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-								<p class="text-sm text-yellow-800">
-									Your subscription will be canceled on {formatDate(
-										data.subscription.current_period_end
-									)}
-								</p>
+								<div class="flex flex-row justify-between items-center text-sm text-yellow-800">
+									<div>
+										Your subscription will end on {formatDate(data.subscription.current_period_end)}
+									</div>
+
+									<form
+										method="POST"
+										action="?/reactivate"
+										use:enhance={() => {
+											isLoading = true;
+											return async ({ update }) => {
+												await update();
+												isLoading = false;
+											};
+										}}
+									>
+										<Button type="submit" variant="outline" disabled={isLoading}>
+											<svg
+												class="mr-2 h-4 w-4"
+												fill="none"
+												stroke="currentColor"
+												viewBox="0 0 24 24"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+												/>
+											</svg>
+											Reactivate
+										</Button>
+									</form>
+								</div>
 							</div>
 						</div>
 					{/if}
@@ -259,7 +288,7 @@
 		</div>
 
 		<!-- Billing History -->
-		<div class="bg-card rounded-lg border">
+		<!-- <div class="bg-card rounded-lg border">
 			<div class="p-6">
 				<h2 class="mb-4 text-xl font-semibold">Billing History</h2>
 				<p class="text-muted-foreground">
@@ -291,7 +320,7 @@
 					</Button>
 				</form>
 			</div>
-		</div>
+		</div> -->
 	{:else}
 		<!-- No Subscription -->
 		<div class="space-y-8">

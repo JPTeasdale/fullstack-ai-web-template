@@ -512,8 +512,10 @@ export type Database = {
     Enums: {
       app_subscription_type:
         | "basic_weekly"
+        | "basic_monthly"
         | "basic_yearly"
         | "pro_weekly"
+        | "pro_monthly"
         | "pro_yearly"
       audit_action:
         | "create"
@@ -538,13 +540,13 @@ export type Database = {
         | "system"
       subscription_status:
         | "incomplete"
-        | "incomplete_expired"
         | "trialing"
         | "active"
         | "paused"
         | "past_due"
         | "canceled"
         | "unpaid"
+        | "will_expire"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -662,8 +664,10 @@ export const Constants = {
     Enums: {
       app_subscription_type: [
         "basic_weekly",
+        "basic_monthly",
         "basic_yearly",
         "pro_weekly",
+        "pro_monthly",
         "pro_yearly",
       ],
       audit_action: [
@@ -691,13 +695,13 @@ export const Constants = {
       ],
       subscription_status: [
         "incomplete",
-        "incomplete_expired",
         "trialing",
         "active",
         "paused",
         "past_due",
         "canceled",
         "unpaid",
+        "will_expire",
       ],
     },
   },

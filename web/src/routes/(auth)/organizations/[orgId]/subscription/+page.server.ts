@@ -2,22 +2,17 @@ import type { PageServerLoad, Actions } from './$types';
 import {
 	fetchPriceId,
 	getStripe,
+	getSubscriptionMetadata,
 	type AppSubscriptionType
 } from '$lib/server/clients/stripe/stripe_client';
 import { urlOrganizationSubscription } from '$lib/url';
 import { fail, redirect, isRedirect } from '@sveltejs/kit';
 import { convertStripeSubscription } from '$lib/server/clients/stripe/stripe_client';
 
-export const load: PageServerLoad = async ({
-	locals: { supabase, supabaseAdmin },
-	params,
-	parent,
-	url
-}) => {
-	await parent();
+export const load: PageServerLoad = async ({ locals: { supabase, supabaseAdmin }, url }) => {
 	// Check for success parameters from Stripe
 	const checkoutSessionId = url.searchParams.get('payment_intent');
-	url.searchParams.delete('payment_intent');
+	// url.searchParams.delete('payment_intent');
 	const success = url.searchParams.get('success');
 	const stripe = getStripe();
 
@@ -25,14 +20,24 @@ export const load: PageServerLoad = async ({
 		const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
 		const subscriptionId = session.subscription as string;
 
+		console.log('subscriptionId', { subscriptionId });
+
 		if (subscriptionId) {
 			const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-			await supabaseAdmin
-				.from('subscriptions')
-				.update(convertStripeSubscription(subscription))
-				.eq('organization_id', params.orgId)
-				.select()
-				.single();
+			const { appSubscriptionId } = getSubscriptionMetadata(subscription);
+
+			const update = convertStripeSubscription(subscription);
+			console.log('subscription', { subscription, appSubscriptionId, update });
+
+			console.log(
+				'test',
+				await supabaseAdmin
+					.from('subscriptions')
+					.update(update)
+					.eq('id', appSubscriptionId)
+					.select()
+					.single()
+			);
 		}
 	}
 
@@ -76,7 +81,7 @@ export const load: PageServerLoad = async ({
 };
 
 export const actions: Actions = {
-	cancel: async ({ locals: { supabase }, params }) => {
+	cancel: async ({ locals: { supabase, supabaseAdmin } }) => {
 		const { data: subscription } = await supabase
 			.from('subscriptions')
 			.select('stripe_subscription_id')
@@ -89,15 +94,20 @@ export const actions: Actions = {
 		try {
 			const stripe = getStripe();
 			// Cancel at period end instead of immediately
-			await stripe.subscriptions.update(subscription.stripe_subscription_id, {
-				cancel_at_period_end: true
-			});
+			const stripeSubscription = await stripe.subscriptions.update(
+				subscription.stripe_subscription_id,
+				{
+					cancel_at_period_end: true
+				}
+			);
+
+			const { appSubscriptionId } = getSubscriptionMetadata(stripeSubscription);
 
 			// Update local database
-			await supabase
+			await supabaseAdmin
 				.from('subscriptions')
-				.update({ cancel_at_period_end: true, status: 'canceled' })
-				.eq('stripe_subscription_id', subscription.stripe_subscription_id);
+				.update(convertStripeSubscription(stripeSubscription))
+				.eq('id', appSubscriptionId);
 
 			return { success: true };
 		} catch (error) {
@@ -106,7 +116,7 @@ export const actions: Actions = {
 		}
 	},
 
-	reactivate: async ({ locals: { supabase }, params }) => {
+	reactivate: async ({ locals: { supabase, supabaseAdmin }, params }) => {
 		const { data: subscription } = await supabase
 			.from('subscriptions')
 			.select('stripe_subscription_id')
@@ -119,15 +129,19 @@ export const actions: Actions = {
 		try {
 			const stripe = getStripe();
 			// Remove cancellation
-			await stripe.subscriptions.update(subscription.stripe_subscription_id, {
-				cancel_at_period_end: false
-			});
+			const stripeSubscription = await stripe.subscriptions.update(
+				subscription.stripe_subscription_id,
+				{
+					cancel_at_period_end: false
+				}
+			);
+			const { appSubscriptionId } = getSubscriptionMetadata(stripeSubscription);
 
 			// Update local database
-			await supabase
+			await supabaseAdmin
 				.from('subscriptions')
-				.update({ cancel_at_period_end: false })
-				.eq('stripe_subscription_id', subscription.stripe_subscription_id);
+				.update(convertStripeSubscription(stripeSubscription))
+				.eq('id', appSubscriptionId);
 
 			return { success: true };
 		} catch (error) {
@@ -136,7 +150,7 @@ export const actions: Actions = {
 		}
 	},
 
-	updatePaymentMethod: async ({ locals: { supabase }, params, request }) => {
+	updatePaymentMethod: async ({ locals: { supabase }, request }) => {
 		const { data: subscription } = await supabase
 			.from('subscriptions')
 			.select('stripe_customer_id')

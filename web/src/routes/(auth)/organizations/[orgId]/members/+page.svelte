@@ -6,6 +6,7 @@
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	interface Props {
 		data: PageData;
@@ -268,7 +269,7 @@
 											<Select
 												value={member.role}
 												onValueChange={(value) => updateMemberRole(member.id, value)}
-												single={true}
+												type="single"
 											>
 												<SelectTrigger class="w-32">
 													<span
@@ -403,11 +404,13 @@
 	</Tabs>
 
 	<!-- Invite Modal -->
-	{#if showInviteModal}
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-75 p-4">
-			<div class="w-full max-w-md rounded-lg bg-white p-6">
-				<h3 class="mb-4 text-lg font-medium text-gray-900">Invite New Member</h3>
+	<Dialog.Root bind:open={showInviteModal}>
+		<Dialog.Content>
+			<Dialog.Header>
+				<Dialog.Title>Invite New Member</Dialog.Title>
+			</Dialog.Header>
 
+			<div class="w-full max-w-md rounded-lg bg-white">
 				{#if inviteError}
 					<div class="mb-4 rounded-md border border-red-200 bg-red-50 p-3">
 						<p class="text-sm text-red-800">{inviteError}</p>
@@ -415,7 +418,11 @@
 				{/if}
 
 				<div class="space-y-4">
-					<div>
+					<div class="text-muted-foreground text-sm">
+						Invite a new member to the <strong>{data.organization?.name}</strong> organization.
+						They will recieve an email with a link to join.
+					</div>
+					<div class="space-y-2">
 						<Label for="email">Email Address</Label>
 						<Input
 							id="email"
@@ -426,11 +433,11 @@
 						/>
 					</div>
 
-					<div>
+					<div class="space-y-2">
 						<Label for="role">Role</Label>
-						<Select bind:value={inviteRole}>
+						<Select bind:value={inviteRole} type="single">
 							<SelectTrigger id="role">
-								<SelectValue />
+								{inviteRole}
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="member">Member</SelectItem>
@@ -456,6 +463,6 @@
 					</Button>
 				</div>
 			</div>
-		</div>
-	{/if}
+		</Dialog.Content>
+	</Dialog.Root>
 </div>

@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 
 import { STRIPE_SECRET_KEY } from '$env/static/private';
-import type { Tables } from '$lib/types/generated/supabase.types';
+import type { Enums, Tables } from '$lib/types/generated/supabase.types';
 
 export function getStripe() {
 	return new Stripe(STRIPE_SECRET_KEY, {
@@ -54,12 +54,22 @@ export async function fetchPriceId(client: Stripe, type: AppSubscriptionType) {
 	return pricesList.data[0].id;
 }
 
-function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
-	switch (stripeStatus) {
+function mapStripeStatus(subscription: Stripe.Subscription): Enums<'subscription_status'> {
+	
+	const status = subscription.status as Stripe.Subscription.Status;
+	const paidUntil = getSubscriptionPaidUntil(subscription);
+	const willEnd = Boolean(
+		subscription.cancel_at_period_end && paidUntil > new Date()
+	);
+	if (willEnd) {
+		return 'will_expire';
+	}
+
+	switch (status) {
 		case 'incomplete':
 			return 'incomplete';
 		case 'incomplete_expired':
-			return 'incomplete_expired';
+			return 'incomplete';
 		case 'trialing':
 			return 'trialing';
 		case 'active':
@@ -83,7 +93,7 @@ export function convertStripeSubscription(
 		stripe_customer_id: subscription.customer as string,
 		stripe_price_id: subscription.items.data[0]?.price.id,
 		app_subscription_type: subscription.items.data[0]?.price.lookup_key as AppSubscriptionType,
-		status: mapStripeStatus(subscription.status),
+		status: mapStripeStatus(subscription),
 		current_period_end: getSubscriptionPaidUntil(subscription).toISOString(),
 		trial_end: subscription.trial_end
 			? new Date(subscription.trial_end * 1000).toISOString()
