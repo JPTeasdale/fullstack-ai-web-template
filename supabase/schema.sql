@@ -23,6 +23,17 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
+CREATE TYPE "public"."app_subscription_type" AS ENUM (
+    'basic_weekly',
+    'basic_yearly',
+    'pro_weekly',
+    'pro_yearly'
+);
+
+
+ALTER TYPE "public"."app_subscription_type" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."audit_action" AS ENUM (
     'create',
     'update',
@@ -80,6 +91,7 @@ CREATE TYPE "public"."subscription_status" AS ENUM (
     'incomplete_expired',
     'trialing',
     'active',
+    'paused',
     'past_due',
     'canceled',
     'unpaid'
@@ -474,7 +486,9 @@ ALTER TABLE "public"."organizations" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."subscriptions" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "user_id" "uuid" NOT NULL,
+    "user_id" "uuid",
+    "organization_id" "uuid",
+    "app_subscription_type" "public"."app_subscription_type",
     "stripe_subscription_id" "text",
     "stripe_customer_id" "text",
     "stripe_price_id" "text",
@@ -565,6 +579,11 @@ ALTER TABLE ONLY "public"."organizations"
 
 ALTER TABLE ONLY "public"."organizations"
     ADD CONSTRAINT "organizations_slug_key" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "public"."subscriptions"
+    ADD CONSTRAINT "subscriptions_organization_id_unique" UNIQUE ("organization_id");
 
 
 
@@ -735,7 +754,7 @@ ALTER TABLE ONLY "public"."audit_logs"
 
 
 ALTER TABLE ONLY "public"."audit_logs"
-    ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+    ADD CONSTRAINT "audit_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE SET NULL;
 
 
 
@@ -745,12 +764,12 @@ ALTER TABLE ONLY "public"."files"
 
 
 ALTER TABLE ONLY "public"."files"
-    ADD CONSTRAINT "files_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "files_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
 
 
 ALTER TABLE ONLY "public"."invitations"
-    ADD CONSTRAINT "invitations_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "invitations_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
 
 
@@ -760,12 +779,12 @@ ALTER TABLE ONLY "public"."invitations"
 
 
 ALTER TABLE ONLY "public"."notifications"
-    ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
 
 
 ALTER TABLE ONLY "public"."organization_members"
-    ADD CONSTRAINT "organization_members_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+    ADD CONSTRAINT "organization_members_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "public"."user_profiles"("user_id") ON DELETE SET NULL;
 
 
 
@@ -775,22 +794,27 @@ ALTER TABLE ONLY "public"."organization_members"
 
 
 ALTER TABLE ONLY "public"."organization_members"
-    ADD CONSTRAINT "organization_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "organization_members_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
 
 
 ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+    ADD CONSTRAINT "organizations_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."user_profiles"("user_id") ON DELETE SET NULL;
 
 
 
 ALTER TABLE ONLY "public"."subscriptions"
-    ADD CONSTRAINT "subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "subscriptions_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."subscriptions"
+    ADD CONSTRAINT "subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
 
 
 ALTER TABLE ONLY "public"."user_profiles_private"
-    ADD CONSTRAINT "user_profiles_private_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "user_profiles_private_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
 
 
@@ -864,6 +888,10 @@ CREATE POLICY "Users can view organization files they belong to" ON "public"."fi
 
 
 CREATE POLICY "Users can view public files" ON "public"."files" FOR SELECT USING (("is_public" = true));
+
+
+
+CREATE POLICY "Users can view their organization's subscription" ON "public"."subscriptions" FOR SELECT USING (( SELECT "public"."authorize_active_org"("subscriptions"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org"));
 
 
 

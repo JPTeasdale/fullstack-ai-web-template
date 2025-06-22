@@ -54,6 +54,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       files: {
@@ -110,6 +117,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "files_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       invitations: {
@@ -154,6 +168,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "invitations_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -196,7 +217,15 @@ export type Database = {
           type?: Database["public"]["Enums"]["notification_type"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       organization_members: {
         Row: {
@@ -228,11 +257,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "organization_members_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "organization_members_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -270,55 +313,90 @@ export type Database = {
           updated_at?: string
           website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organizations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
+          app_subscription_type:
+            | Database["public"]["Enums"]["app_subscription_type"]
+            | null
           cancel_at_period_end: boolean | null
           canceled_at: string | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
           id: string
+          organization_id: string | null
           status: Database["public"]["Enums"]["subscription_status"]
           stripe_customer_id: string | null
           stripe_price_id: string | null
           stripe_subscription_id: string | null
           trial_end: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          app_subscription_type?:
+            | Database["public"]["Enums"]["app_subscription_type"]
+            | null
           cancel_at_period_end?: boolean | null
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
+          organization_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           stripe_customer_id?: string | null
           stripe_price_id?: string | null
           stripe_subscription_id?: string | null
           trial_end?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          app_subscription_type?:
+            | Database["public"]["Enums"]["app_subscription_type"]
+            | null
           cancel_at_period_end?: boolean | null
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
+          organization_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           stripe_customer_id?: string | null
           stripe_price_id?: string | null
           stripe_subscription_id?: string | null
           trial_end?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
@@ -372,7 +450,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_private_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
     }
     Views: {
@@ -424,6 +510,11 @@ export type Database = {
       }
     }
     Enums: {
+      app_subscription_type:
+        | "basic_weekly"
+        | "basic_yearly"
+        | "pro_weekly"
+        | "pro_yearly"
       audit_action:
         | "create"
         | "update"
@@ -450,6 +541,7 @@ export type Database = {
         | "incomplete_expired"
         | "trialing"
         | "active"
+        | "paused"
         | "past_due"
         | "canceled"
         | "unpaid"
@@ -568,6 +660,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_subscription_type: [
+        "basic_weekly",
+        "basic_yearly",
+        "pro_weekly",
+        "pro_yearly",
+      ],
       audit_action: [
         "create",
         "update",
@@ -596,6 +694,7 @@ export const Constants = {
         "incomplete_expired",
         "trialing",
         "active",
+        "paused",
         "past_due",
         "canceled",
         "unpaid",

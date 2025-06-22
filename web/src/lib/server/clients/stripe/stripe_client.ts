@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 
 import { STRIPE_SECRET_KEY } from '$env/static/private';
+import type { Tables } from '$lib/types/generated/supabase.types';
 
 export function getStripe() {
 	return new Stripe(STRIPE_SECRET_KEY, {
@@ -37,17 +38,59 @@ export function makeSubscriptionMetadata(metadata: StripeSubscriptionMetadata) {
 export type AppSubscriptionType = 'basic_weekly' | 'basic_yearly' | 'pro_weekly' | 'pro_yearly';
 
 export async function fetchPriceId(client: Stripe, type: AppSubscriptionType) {
-	const prices = await client.prices.search({
-		query: `metadata['price_type']:'${type}'`
+	const pricesList = await client.prices.list({
+		lookup_keys: [type],
+		limit: 1
 	});
 
-	if (!prices.data[0]) {
+	if (!pricesList.data[0]) {
 		throw new Error('No prices found for type: ' + type);
 	}
 
-	if (prices.data.length > 1) {
+	if (pricesList.data.length > 1) {
 		throw new Error('Multiple prices found for type: ' + type);
 	}
 
-	return prices.data[0].id;
+	return pricesList.data[0].id;
+}
+
+function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
+	switch (stripeStatus) {
+		case 'incomplete':
+			return 'incomplete';
+		case 'incomplete_expired':
+			return 'incomplete_expired';
+		case 'trialing':
+			return 'trialing';
+		case 'active':
+			return 'active';
+		case 'past_due':
+			return 'past_due';
+		case 'canceled':
+			return 'canceled';
+		case 'unpaid':
+			return 'unpaid';
+		default:
+			return 'incomplete';
+	}
+}
+
+export function convertStripeSubscription(
+	subscription: Stripe.Subscription
+): Tables<'subscriptions'> {
+	return {
+		stripe_subscription_id: subscription.id,
+		stripe_customer_id: subscription.customer as string,
+		stripe_price_id: subscription.items.data[0]?.price.id,
+		app_subscription_type: subscription.items.data[0]?.price.lookup_key as AppSubscriptionType,
+		status: mapStripeStatus(subscription.status),
+		current_period_end: getSubscriptionPaidUntil(subscription).toISOString(),
+		trial_end: subscription.trial_end
+			? new Date(subscription.trial_end * 1000).toISOString()
+			: null,
+		cancel_at_period_end: subscription.cancel_at_period_end || false,
+		canceled_at: subscription.canceled_at
+			? new Date(subscription.canceled_at * 1000).toISOString()
+			: null
+	};
 }

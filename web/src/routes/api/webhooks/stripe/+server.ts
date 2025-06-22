@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { getStripe, getSubscriptionMetadata } from '$lib/server/clients/stripe/stripe_client';
+import { convertStripeSubscription, getStripe, getSubscriptionMetadata } from '$lib/server/clients/stripe/stripe_client';
 import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
 import type Stripe from 'stripe';
 import type { Enums } from '$lib/types/generated/supabase.types';
@@ -17,28 +17,6 @@ type RelevantEvent =
 
 // Define the subscription status type to match our database enum
 type SubscriptionStatus = Enums<'subscription_status'>;
-
-// Map Stripe subscription status to our enum
-function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
-	switch (stripeStatus) {
-		case 'incomplete':
-			return 'incomplete';
-		case 'incomplete_expired':
-			return 'incomplete_expired';
-		case 'trialing':
-			return 'trialing';
-		case 'active':
-			return 'active';
-		case 'past_due':
-			return 'past_due';
-		case 'canceled':
-			return 'canceled';
-		case 'unpaid':
-			return 'unpaid';
-		default:
-			return 'incomplete';
-	}
-}
 
 // Get user_id from Stripe customer or session
 async function getUserIdFromStripe(
@@ -125,33 +103,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				}
 
 				// Retrieve the subscription details
-				const subscription: any = await stripe.subscriptions.retrieve(
+				const subscription = await stripe.subscriptions.retrieve(
 					session.subscription as string
 				);
 				const metadata = getSubscriptionMetadata(subscription);
 
 				await supabaseAdmin
 					.from('subscriptions')
-					.update({
-						user_id: metadata.appUserId,
-						stripe_subscription_id: subscription.id,
-						stripe_customer_id: subscription.customer as string,
-						stripe_price_id: subscription.items.data[0]?.price.id,
-						status: mapStripeStatus(subscription.status),
-						current_period_start: subscription.current_period_start
-							? new Date(subscription.current_period_start * 1000).toISOString()
-							: null,
-						current_period_end: subscription.current_period_end
-							? new Date(subscription.current_period_end * 1000).toISOString()
-							: null,
-						trial_end: subscription.trial_end
-							? new Date(subscription.trial_end * 1000).toISOString()
-							: null,
-						cancel_at_period_end: subscription.cancel_at_period_end || false,
-						canceled_at: subscription.canceled_at
-							? new Date(subscription.canceled_at * 1000).toISOString()
-							: null
-					})
+					.update(convertStripeSubscription(subscription))
 					.eq('id', metadata.appSubscriptionId);
 
 				console.log(`Created subscription for user ${userId} from checkout session ${session.id}`);
@@ -168,26 +127,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					break;
 				}
 
-				await supabaseAdmin.from('subscriptions').upsert({
-					user_id: userId,
-					stripe_subscription_id: subscription.id,
-					stripe_customer_id: subscription.customer as string,
-					stripe_price_id: subscription.items.data[0]?.price.id,
-					status: mapStripeStatus(subscription.status),
-					current_period_start: subscription.current_period_start
-						? new Date(subscription.current_period_start * 1000).toISOString()
-						: null,
-					current_period_end: subscription.current_period_end
-						? new Date(subscription.current_period_end * 1000).toISOString()
-						: null,
-					trial_end: subscription.trial_end
-						? new Date(subscription.trial_end * 1000).toISOString()
-						: null,
-					cancel_at_period_end: subscription.cancel_at_period_end || false,
-					canceled_at: subscription.canceled_at
-						? new Date(subscription.canceled_at * 1000).toISOString()
-						: null
-				});
+				await supabaseAdmin.from('subscriptions').upsert(
+					convertStripeSubscription(subscription)
+				);
 
 				console.log(
 					`${event.type === 'customer.subscription.created' ? 'Created' : 'Updated'} subscription for user ${userId}`
@@ -224,15 +166,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 				await supabaseAdmin
 					.from('subscriptions')
-					.update({
-						status: mapStripeStatus(subscription.status),
-						current_period_start: subscription.current_period_start
-							? new Date(subscription.current_period_start * 1000).toISOString()
-							: null,
-						current_period_end: subscription.current_period_end
-							? new Date(subscription.current_period_end * 1000).toISOString()
-							: null
-					})
+					.update(
+						convertStripeSubscription(subscription)
+					)
 					.eq('stripe_subscription_id', subscription.id);
 
 				console.log(`Updated subscription ${subscription.id} after successful payment`);

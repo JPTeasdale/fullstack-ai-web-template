@@ -1,1 +1,1 @@
-<div class="flex flex-col p-4">Your organization content</div>
+<div class="flex flex-col">Your organization content</div>

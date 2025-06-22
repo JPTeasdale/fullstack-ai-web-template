@@ -51,6 +51,17 @@ export const hookSupabaseSession: Handle = async ({ event, resolve }) => {
 		});
 	}
 
+	// This is vital for RLS to work correctly.
+	// The database only are allows us to fetch data for the current organization.
+	// If the user is not a member of the organization, or the organization does not exist
+	// the value will be ignored and the user will not be able to access any organization data for this request.
+
+	// It's also importat to set this in the hooks file, +layout.server.ts, and +page.server.ts files do
+	// Not provide ordering guarantees, and this MUST be set before any database queries are made.
+	if (event.params.orgId) {
+		await event.locals.supabase.rpc('set_current_organization_id', { org_id: event.params.orgId });
+	}
+
 	event.locals.supabaseAdmin = createSupabaseAdminClient();
 
 	/**

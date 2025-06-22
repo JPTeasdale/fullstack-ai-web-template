@@ -10,9 +10,12 @@
 		URL_ORGANIZATIONS,
 		urlOrganization,
 		urlOrganizationMembers,
-		urlOrganizationSettings
+		urlOrganizationSettings,
+
+		urlOrganizationSubscription
+
 	} from '$lib/url';
-	import { Cog, Building2, Users } from '@lucide/svelte';
+	import { Cog, Building2, Users, CreditCard } from '@lucide/svelte';
 	import SidebarLink from '$lib/components/Sidebar/SidebarLink.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	let { children, data } = $props();
@@ -80,13 +83,13 @@
 					/>
 					<SidebarLink
 						{isExpanded}
-						href={urlOrganizationSettings(orgId)}
-						label="Settings"
-						Icon={Cog}
+						href={urlOrganizationSubscription(orgId)}
+						label="Subscription"
+						Icon={CreditCard}
 					/>
 				{/snippet}
 			</Sidebar>
-			<main class="flex w-full flex-1">
+			<main class="flex w-full flex-1 px-4 py-8 sm:px-6 lg:px-8">
 				{@render children()}
 			</main>
 		</div>

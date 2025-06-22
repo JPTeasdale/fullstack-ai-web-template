@@ -140,7 +140,7 @@
 	}
 </script>
 
-<div class="mx-auto w-full px-4 py-8 sm:px-6 lg:px-8">
+<div class="mx-auto w-full">
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold text-gray-900">Members</h1>
 		<p class="mt-2 text-gray-600">

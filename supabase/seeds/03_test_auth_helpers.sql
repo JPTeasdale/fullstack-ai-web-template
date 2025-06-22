@@ -29,3 +29,15 @@ end
 $$
 language plpgsql;
 
+
+
+create or replace function app_tests.set_active_org(_organization_id text)
+  returns void
+  as $$
+begin
+  perform public.set_current_organization_id(
+    (select app_tests.get_organization_id(_organization_id))
+  );
+end
+$$
+language plpgsql;

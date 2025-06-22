@@ -173,53 +173,6 @@ CREATE TRIGGER user_profiles_private_updated_at
 
 
 -- ============================================================================
--- SUBSCRIPTIONS TABLE
--- ============================================================================
-
--- Create enum for subscription status
-CREATE TYPE public.subscription_status AS ENUM (
-    'incomplete',
-    'incomplete_expired',
-    'trialing',
-    'active',
-    'past_due',
-    'canceled',
-    'unpaid'
-);
-
--- Create subscriptions table
-CREATE TABLE public.subscriptions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
-    stripe_subscription_id TEXT UNIQUE,
-    stripe_customer_id TEXT,
-    stripe_price_id TEXT,
-    status public.subscription_status NOT NULL DEFAULT 'incomplete',
-    current_period_start TIMESTAMPTZ,
-    current_period_end TIMESTAMPTZ,
-    trial_end TIMESTAMPTZ,
-    cancel_at_period_end BOOLEAN DEFAULT FALSE,
-    canceled_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    
-    CONSTRAINT subscriptions_user_id_unique UNIQUE (user_id)
-);
-
--- Enable RLS for subscriptions
-ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-
--- RLS Policies for subscriptions
-CREATE POLICY "Users can view their own subscription" 
-    ON public.subscriptions FOR SELECT 
-    USING ((select auth.uid()) = user_id);
-
--- Create trigger for updated_at on subscriptions
-CREATE TRIGGER subscriptions_updated_at
-    BEFORE UPDATE ON public.subscriptions
-    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- ============================================================================
 -- ORGANIZATIONS TABLE (for team/multi-tenant features)
 -- ============================================================================
 
@@ -452,6 +405,75 @@ CREATE TRIGGER invitations_updated_at
     BEFORE UPDATE ON public.invitations
     FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+
+-- ============================================================================
+-- SUBSCRIPTIONS TABLE
+-- ============================================================================
+
+-- Create enum for subscription status
+CREATE TYPE public.subscription_status AS ENUM (
+    'incomplete',
+    'incomplete_expired',
+    'trialing',
+    'active',
+    'paused',
+    'past_due',
+    'canceled',
+    'unpaid'
+);
+
+-- Create enum for subscription status
+CREATE TYPE public.app_subscription_type AS ENUM (
+    'basic_weekly',
+    'basic_yearly',
+    'pro_weekly',
+    'pro_yearly'
+);
+
+-- Create subscriptions table
+CREATE TABLE public.subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
+    organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
+    app_subscription_type public.app_subscription_type DEFAULT NULL,
+    stripe_subscription_id TEXT UNIQUE,
+    stripe_customer_id TEXT,
+    stripe_price_id TEXT,
+    status public.subscription_status NOT NULL DEFAULT 'incomplete',
+    current_period_start TIMESTAMPTZ,
+    current_period_end TIMESTAMPTZ,
+    trial_end TIMESTAMPTZ,
+    cancel_at_period_end BOOLEAN DEFAULT FALSE,
+    canceled_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    
+    CONSTRAINT subscriptions_user_id_unique UNIQUE (user_id),
+    CONSTRAINT subscriptions_organization_id_unique UNIQUE (organization_id)
+);
+
+-- Enable RLS for subscriptions
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for subscriptions
+CREATE POLICY "Users can view their own subscription" 
+    ON public.subscriptions FOR SELECT 
+    USING ((select auth.uid()) = user_id);
+
+
+-- RLS Policies for subscriptions
+CREATE POLICY "Users can view their organization's subscription" 
+    ON public.subscriptions FOR SELECT 
+    USING (
+        user_id IS NULL AND
+        (select public.authorize_active_org(organization_id, 'member'))
+    );
+
+-- Create trigger for updated_at on subscriptions
+CREATE TRIGGER subscriptions_updated_at
+    BEFORE UPDATE ON public.subscriptions
+    FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 -- ============================================================================
 -- AUDIT LOGS TABLE
 -- ============================================================================
@@ -598,7 +620,7 @@ CREATE TRIGGER files_updated_at
 CREATE OR REPLACE FUNCTION public.set_current_organization_id(org_id uuid) RETURNS void AS $$
 BEGIN
   -- Convert NULL to empty string for storage, COALESCE handles NULL input
-  PERFORM set_config('app.current_organization_id', COALESCE(org_id::text, ''), true);
+  PERFORM set_config('app.current_organization_id', COALESCE(org_id::text, ''), false);
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 
