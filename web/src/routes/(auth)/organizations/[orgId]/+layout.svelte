@@ -4,12 +4,21 @@
 	import Sidebar from '$lib/components/Sidebar/Sidebar.svelte';
 	import Chat from '$lib/ai/svelte/components/chat/Chat.svelte';
 	import { ConversationStore } from '$lib/ai/svelte/store/conversationStore';
-	import { URL_API_SIGNOUT, URL_DASHBOARD, URL_ORGANIZATIONS } from '$lib/url';
-	import { House } from '@lucide/svelte';
+	import {
+		URL_API_SIGNOUT,
+		URL_DASHBOARD,
+		URL_ORGANIZATIONS,
+		urlOrganization,
+		urlOrganizationMembers,
+		urlOrganizationSettings
+	} from '$lib/url';
+	import { Cog, Building2, Users } from '@lucide/svelte';
 	import SidebarLink from '$lib/components/Sidebar/SidebarLink.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	let { children, data } = $props();
 	const user = $derived(data.user);
+	const organization = $derived(data.organization);
+	const orgId = $derived(organization.id);
 
 	const onSignOut = async () => {
 		const res = await fetch(URL_API_SIGNOUT, {
@@ -41,14 +50,40 @@
 					tabindex={-1}
 					href={URL_ORGANIZATIONS}
 				>
-					Switch to Organization View
+					Switch Organization
+				</Button>
+				<Button
+					variant="ghost"
+					class="block w-full px-4 text-left"
+					role="menuitem"
+					tabindex={-1}
+					href={URL_DASHBOARD}
+				>
+					Switch to Dashboard View
 				</Button>
 			{/snippet}
 		</Header>
 		<div class="flex grow">
 			<Sidebar>
 				{#snippet items(isExpanded)}
-					<SidebarLink {isExpanded} href={URL_DASHBOARD} label="Dashboard" Icon={House} />
+					<SidebarLink
+						{isExpanded}
+						href={urlOrganization(orgId)}
+						label={organization.name}
+						Icon={Building2}
+					/>
+					<SidebarLink
+						{isExpanded}
+						href={urlOrganizationMembers(orgId)}
+						label="Members"
+						Icon={Users}
+					/>
+					<SidebarLink
+						{isExpanded}
+						href={urlOrganizationSettings(orgId)}
+						label="Settings"
+						Icon={Cog}
+					/>
 				{/snippet}
 			</Sidebar>
 			<main class="flex w-full flex-1">

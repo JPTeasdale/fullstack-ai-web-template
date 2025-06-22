@@ -1,17 +1,18 @@
 <script lang="ts">
-	import Button from './ui/button/button.svelte';
-	import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
+	import Button from '../ui/button/button.svelte';
+	import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 	import { APP_NAME } from '$lib/app/constants';
 	import AppIcon from '$lib/app/AppIcon.svelte';
 	import type { User } from '@supabase/supabase-js';
-	import type { Tables } from '$lib/types/generated/supabase.types';
-
+	import type { Snippet } from 'svelte';
 	const {
 		user,
-		onSignOut
+		onSignOut,
+		contextItems
 	}: {
 		user?: User;
 		onSignOut: () => Promise<void>;
+		contextItems?: Snippet;
 	} = $props();
 </script>
 
@@ -56,22 +57,12 @@
 				</PopoverTrigger>
 
 				<PopoverContent class="mr-2">
-					<Button
-						variant="ghost"
-						class="w-full block px-4 text-left"
-						role="menuitem"
-						tabindex={-1}
-						id="user-menu-item-1"
-						href="/orgs"
-					>
-						Switch to Organization View
-					</Button>
+					{@render contextItems?.()}
 					<Button
 						variant="ghost"
 						class="text-destructive block w-full px-4 text-left"
 						role="menuitem"
 						tabindex={-1}
-						id="user-menu-item-1"
 						onclick={onSignOut}
 					>
 						Sign Out

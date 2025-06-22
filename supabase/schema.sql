@@ -233,7 +233,7 @@ ALTER TABLE "public"."organization_members" OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."current_active_membership"() RETURNS "public"."organization_members"
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET search_path = ''
+    SET "search_path" TO ''
     AS $$
 DECLARE
     org_id uuid;
@@ -824,6 +824,10 @@ CREATE POLICY "Users can manage their own notifications" ON "public"."notificati
 
 
 CREATE POLICY "Users can select organizations they belong to" ON "public"."organizations" FOR SELECT USING (( SELECT "public"."is_organization_member"("organizations"."id") AS "is_organization_member"));
+
+
+
+CREATE POLICY "Users can select thir own memberships" ON "public"."organization_members" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 
 

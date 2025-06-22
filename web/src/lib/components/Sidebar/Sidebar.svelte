@@ -26,7 +26,7 @@
 	}`}
 >
 	<nav class="flex-1 py-4">
-		<ul class="space-y-2">
+		<ul>
 			{@render items(isExpanded)}
 		</ul>
 	</nav>

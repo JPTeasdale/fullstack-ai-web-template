@@ -7,6 +7,18 @@ export const URL_API_PUBLIC_ROOT = '/api/webhooks';
 export const URL_API_SIGNOUT = `${URL_API_V1_ROOT}/signout`;
 
 export const URL_DASHBOARD = '/dashboard';
+export const URL_ORGANIZATIONS = '/organizations';
+
+export function urlOrganization(orgId: string) {
+	return `${URL_ORGANIZATIONS}/${orgId}`;
+}
+
+export function urlOrganizationMembers(orgId: string) {
+	return `${urlOrganization(orgId)}/members`;
+}
+export function urlOrganizationSettings(orgId: string) {
+	return `${urlOrganization(orgId)}/settings`;
+}
 
 export const URL_AUTH = '/auth';
 export const URL_SIGNIN = `${URL_AUTH}/signin`;

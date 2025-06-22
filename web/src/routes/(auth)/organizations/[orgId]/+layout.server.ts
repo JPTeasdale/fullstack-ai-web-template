@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals: { supabase }, params }) => {
@@ -8,5 +9,19 @@ export const load: LayoutServerLoad = async ({ locals: { supabase }, params }) =
     // the value will be ignored and the user will not be able to access any organizations for this request.
     await supabase.rpc('set_current_organization_id', { org_id: orgId });
 
-	return {};
+	const { data: organization, error: organizationError } = await supabase
+		.from('organizations')
+		.select('*')
+		.eq('id', orgId)
+		.maybeSingle();
+
+    if (organizationError) {
+        throw error(500, 'Error fetching organization');
+    }
+
+    if (!organization) {
+        throw error(404, 'Organization not found');
+    }
+
+	return { organization };
 };

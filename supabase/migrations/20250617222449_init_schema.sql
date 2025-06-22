@@ -152,7 +152,7 @@ CREATE TRIGGER user_profiles_updated_at
 
 -- Create user_profiles_private table
 CREATE TABLE public.user_profiles_private (
-    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID PRIMARY KEY REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
     stripe_customer_id TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
@@ -190,7 +190,7 @@ CREATE TYPE public.subscription_status AS ENUM (
 -- Create subscriptions table
 CREATE TABLE public.subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
     stripe_subscription_id TEXT UNIQUE,
     stripe_customer_id TEXT,
     stripe_price_id TEXT,
@@ -230,7 +230,7 @@ CREATE TABLE public.organizations (
     description TEXT,
     logo_url TEXT,
     website_url TEXT,
-    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_by UUID REFERENCES public.user_profiles(user_id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -255,9 +255,9 @@ CREATE TYPE public.member_role AS ENUM ('owner', 'admin', 'member');
 CREATE TABLE public.organization_members (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
     role public.member_role NOT NULL DEFAULT 'member',
-    invited_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    invited_by UUID REFERENCES public.user_profiles(user_id) ON DELETE SET NULL,
     joined_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     
@@ -428,7 +428,7 @@ CREATE TABLE public.invitations (
     organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
     email TEXT NOT NULL,
     role public.member_role NOT NULL DEFAULT 'member',
-    invited_by UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    invited_by UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
     status public.invitation_status NOT NULL DEFAULT 'pending',
     token TEXT UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
     expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '7 days') NOT NULL,
@@ -466,7 +466,7 @@ CREATE TYPE public.audit_action AS ENUM (
 
 CREATE TABLE public.audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE SET NULL,
     organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
     action public.audit_action NOT NULL,
     resource_type TEXT,
@@ -500,7 +500,7 @@ CREATE TYPE public.notification_type AS ENUM (
 
 CREATE TABLE public.notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
     type public.notification_type NOT NULL DEFAULT 'info',
     title TEXT NOT NULL,
     message TEXT,
@@ -528,7 +528,7 @@ CREATE TABLE public.files (
     size BIGINT NOT NULL,
     mime_type TEXT NOT NULL,
     checksum TEXT,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
     organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
     is_public BOOLEAN DEFAULT FALSE NOT NULL,
     metadata JSONB DEFAULT '{}',
