@@ -1,6 +1,6 @@
 name = "fullstack-ai-web-template"
 pages_build_output_dir = ".svelte-kit/cloudflare"
-compatibility_date = "2025-06-16"
+compatibility_date = "2025-06-04"
 compatibility_flags = ["nodejs_compat"]
 
 [[r2_buckets]]

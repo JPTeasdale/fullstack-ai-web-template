@@ -1,8 +1,8 @@
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
 import type { RequestEvent } from './$types';
 
-export async function POST(params: RequestEvent) {
-	return await handleLlmRequest(params, {
+export async function POST(event: RequestEvent) {
+	return await handleLlmRequest(event, {
 		async getInitialSystemPrompt() {
 			return '';
 		},

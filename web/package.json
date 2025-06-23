@@ -6,7 +6,7 @@
 	"scripts": {
 		"//": "The proxy is so supabase can call our auth email webhook from inside the development docker container",
 		"dev:proxy": "npx configurable-http-proxy --port 3000 --change-origin --default-target http://localhost:5173",
-		"dev": "npm run dev:proxy & vite dev",
+		"dev": "concurrently --kill-others \"npm run dev:proxy\" \"vite dev\"",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
@@ -43,6 +43,7 @@
 		"@vitest/browser": "3.2.3",
 		"@vitest/coverage-v8": "3.2.3",
 		"bits-ui": "^2.8.8",
+		"concurrently": "^9.2.0",
 		"jsdom": "^26.0.0",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
@@ -60,6 +61,7 @@
 	},
 	"dependencies": {
 		"@aws-sdk/client-ses": "^3.830.0",
+		"@cloudflare/vite-plugin": "^1.7.4",
 		"@posthog/ai": "^5.1.0",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.50.0",

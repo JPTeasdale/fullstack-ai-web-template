@@ -154,6 +154,7 @@ CREATE TRIGGER user_profiles_updated_at
 CREATE TABLE public.user_profiles_private (
     user_id UUID PRIMARY KEY REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
     stripe_customer_id TEXT,
+    openai_vector_store_id TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -183,6 +184,7 @@ CREATE TABLE public.organizations (
     description TEXT,
     logo_url TEXT,
     website_url TEXT,
+    openai_vector_store_id TEXT,
     created_by UUID REFERENCES public.user_profiles(user_id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL

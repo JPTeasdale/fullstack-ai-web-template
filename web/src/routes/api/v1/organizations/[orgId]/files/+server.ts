@@ -1,7 +1,14 @@
 import { json } from '@sveltejs/kit';
 import { createFileUploadKey } from '$lib/utils/fileUpload';
+import { getStreamFromFile, readIntoBuffer } from '$lib/cloudflare/getStreamFromFile';
 
-export async function POST({ request, locals: { supabase, supabaseAdmin, user, openai, r2 } }) {
+export async function POST({
+	request,
+	locals: { supabase, supabaseAdmin, user, openai, r2 },
+	params
+}) {
+	const { orgId } = params;
+
 	if (!user) {
 		return json(
 			{ error: 'Unauthorized' },
@@ -11,14 +18,23 @@ export async function POST({ request, locals: { supabase, supabaseAdmin, user, o
 		);
 	}
 
+	const { data: organization, error } = await supabase
+		.from('organizations')
+		.select('*')
+		.eq('id', orgId)
+		.maybeSingle();
+
+	if (!organization) {
+		return json({ error: 'Organization not found' }, { status: 404 });
+	}
+
 	try {
 		const formData = await request.formData();
-		const orgId = formData.get('orgId') as string | null;
 		const file = formData.get('file') as File | null;
 
-		if (!orgId || !file) {
+		if (!file) {
 			return json(
-				{ error: 'orgId and file are required in FormData' },
+				{ error: 'file is required in FormData' },
 				{
 					status: 400
 				}
@@ -80,11 +96,9 @@ export async function POST({ request, locals: { supabase, supabaseAdmin, user, o
 
 		const key = createFileUploadKey(fileUpload);
 
-		const { readable, writable } = new FixedLengthStream(file.size);
+		const body = await getStreamFromFile(upload, file.size);
 
-		upload.pipeTo(writable);
-
-		const uploadPromise = r2.put(key, readable);
+		const uploadPromise = r2.put(key, body);
 
 		let openaiFileId: string | null = null;
 		if (isDocument) {
@@ -97,6 +111,24 @@ export async function POST({ request, locals: { supabase, supabaseAdmin, user, o
 		}
 
 		await uploadPromise;
+
+		if (openaiFileId) {
+			if (!organization.openai_vector_store_id) {
+				const store = await openai.vectorStores.create({
+					name: organization.name,
+					file_ids: [openaiFileId]
+				});
+
+				await supabase
+					.from('organizations')
+					.update({ openai_vector_store_id: store.id })
+					.eq('id', orgId);
+			} else if (openaiFileId) {
+				await openai.vectorStores.files.create(organization.openai_vector_store_id, {
+					file_id: openaiFileId
+				});
+			}
+		}
 
 		await supabaseAdmin
 			.from('files')

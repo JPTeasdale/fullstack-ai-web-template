@@ -477,6 +477,7 @@ CREATE TABLE IF NOT EXISTS "public"."organizations" (
     "description" "text",
     "logo_url" "text",
     "website_url" "text",
+    "openai_vector_store_id" "text",
     "created_by" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
@@ -526,6 +527,7 @@ ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
 CREATE TABLE IF NOT EXISTS "public"."user_profiles_private" (
     "user_id" "uuid" NOT NULL,
     "stripe_customer_id" "text",
+    "openai_vector_store_id" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );

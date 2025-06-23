@@ -287,6 +287,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          openai_vector_store_id: string | null
           slug: string
           updated_at: string
           website_url: string | null
@@ -298,6 +299,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          openai_vector_store_id?: string | null
           slug: string
           updated_at?: string
           website_url?: string | null
@@ -309,6 +311,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          openai_vector_store_id?: string | null
           slug?: string
           updated_at?: string
           website_url?: string | null
@@ -434,18 +437,21 @@ export type Database = {
       user_profiles_private: {
         Row: {
           created_at: string
+          openai_vector_store_id: string | null
           stripe_customer_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          openai_vector_store_id?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          openai_vector_store_id?: string | null
           stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string

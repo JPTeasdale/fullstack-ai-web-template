@@ -22,6 +22,9 @@ export function urlOrganizationSettings(orgId: string) {
 export function urlOrganizationSubscription(orgId: string) {
 	return `${urlOrganization(orgId)}/subscription`;
 }
+export function urlOrganizationFiles(orgId: string) {
+	return `${urlOrganization(orgId)}/files`;
+}
 
 export const URL_AUTH = '/auth';
 export const URL_SIGNIN = `${URL_AUTH}/signin`;

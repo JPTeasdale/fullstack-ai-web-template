@@ -10,12 +10,10 @@
 		URL_ORGANIZATIONS,
 		urlOrganization,
 		urlOrganizationMembers,
-		urlOrganizationSettings,
-
+		urlOrganizationFiles,
 		urlOrganizationSubscription
-
 	} from '$lib/url';
-	import { Cog, Building2, Users, CreditCard } from '@lucide/svelte';
+	import { Cog, Building2, Users, CreditCard, Files } from '@lucide/svelte';
 	import SidebarLink from '$lib/components/Sidebar/SidebarLink.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	let { children, data } = $props();
@@ -38,7 +36,7 @@
 
 	const items = $derived($conversation);
 	const handleSendMessage = async (message: string) => {
-		await sendMessage('/api/v1/llm/handle-turn', message);
+		await sendMessage(`/api/v1/organizations/${orgId}/handle-turn`, message);
 	};
 </script>
 
@@ -80,6 +78,12 @@
 						href={urlOrganizationMembers(orgId)}
 						label="Members"
 						Icon={Users}
+					/>
+					<SidebarLink
+						{isExpanded}
+						href={urlOrganizationFiles(orgId)}
+						label="Files"
+						Icon={Files}
 					/>
 					<SidebarLink
 						{isExpanded}

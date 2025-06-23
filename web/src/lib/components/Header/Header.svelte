@@ -16,9 +16,12 @@
 	} = $props();
 </script>
 
-<header class="bg-background z-10 m-3 rounded shadow">
+<header class="bg-background max-w-screen z-10 shadow sm:m-3 sm:rounded">
 	<div class="mx-auto flex h-16 items-center justify-between p-4">
-		<a class="flex h-full items-center gap-2 text-xl font-semibold text-gray-900" href="/">
+		<a
+			class="flex h-full items-center gap-2 truncate whitespace-nowrap text-xl font-semibold text-gray-900"
+			href="/"
+		>
 			<AppIcon class="h-10 w-10" />
 			{APP_NAME}
 		</a>
@@ -29,14 +32,13 @@
 					<Button
 						type="button"
 						variant="ghost"
-						class="focus:ring-primary text-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
+						class="focus:ring-primary text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 space-x-1"
 						id="user-menu-button"
 						aria-haspopup="true"
 					>
-						<span class="sr-only">Open user menu</span>
 						<!-- You might want a user avatar here eventually -->
 						<!-- <img class="h-8 w-8 rounded-full" src="user-avatar.png" alt=""> -->
-						<span class="ml-2 text-sm font-medium text-gray-700 lg:block">
+						<span class="ml-2 text-sm font-medium text-gray-700 lg:block hidden sm:block">
 							<span class="sr-only">Open user menu for </span>{user.email}
 						</span>
 						<svg
@@ -45,7 +47,7 @@
 							viewBox="0 0 24 24"
 							stroke-width="1.5"
 							stroke="currentColor"
-							class="ml-1 size-6 h-5 w-5 shrink-0 text-gray-400 lg:block"
+							class="size-6 h-5 w-5 shrink-0 text-gray-400 lg:block"
 						>
 							<path
 								stroke-linecap="round"
@@ -57,6 +59,9 @@
 				</PopoverTrigger>
 
 				<PopoverContent class="mr-2">
+					<div class="flex flex-col gap-2 sm:hidden">
+						{user.email}
+					</div>
 					{@render contextItems?.()}
 					<Button
 						variant="ghost"

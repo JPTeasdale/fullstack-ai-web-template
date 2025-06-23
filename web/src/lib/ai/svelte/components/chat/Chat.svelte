@@ -63,37 +63,33 @@
 		}
 	});
 
-	async function scrollToUserMessage(animated = true): Promise<void> {
+	const scrollToLatestUserMessage = async (animated = true): Promise<void> => {
 		// Use standard array method instead of findLastIndex for better compatibility
 		let userMessageIndex = -1;
 		for (const [idx, item] of items.entries()) {
 			if (item.type === 'message' && item.role === 'user') {
 				userMessageIndex = idx;
-				break;
 			}
 		}
-
 		if (userMessageIndex >= 0) {
 			await scrollToMessage(userMessageIndex, animated);
 		}
-	}
+	};
 
-	async function scrollToMessage(messageIndex: number, animated: boolean): Promise<void> {
+	const scrollToMessage = async (messageIndex: number, animated: boolean): Promise<void> => {
 		const messageView = messageRefs[messageIndex];
-		const containerView = messagesContainerRef;
 
-		if (messageIndex >= 0 && scrollViewRef && messageView && containerView) {
-			const containerHeight = containerView.clientHeight;
-			const messageHeight = messageView.clientHeight;
-
+		if (messageIndex >= 0 && scrollViewRef && messageView) {
+			const messageOffsetTop = messageView.offsetTop;
+			// Scroll to the message position
 			scrollViewRef.scrollTo({
-				top: containerHeight - messageHeight,
+				top: messageOffsetTop,
 				behavior: animated ? 'smooth' : 'instant'
 			});
 		}
-	}
+	};
 
-	function handleScroll(event: Event): void {
+	const handleScroll = (event: Event): void => {
 		const target = event.target as HTMLDivElement;
 		const { scrollTop, scrollHeight, clientHeight } = target;
 
@@ -102,30 +98,30 @@
 			scrollTop >= 0 && Math.abs(scrollTop + clientHeight - scrollHeight) < 20;
 
 		isAtBottom = isScrolledToBottom;
-	}
+	};
 
-	function sendMessage(): void {
+	const sendMessage = (): void => {
 		if (inputMessageText.trim()) {
 			onSendMessage(inputMessageText);
 			inputMessageText = '';
 			// Keep focus on the input
 			setTimeout(() => {
 				if (inputRef) inputRef.focus();
-				scrollToUserMessage();
+				scrollToLatestUserMessage();
 			}, 100);
 		}
-	}
+	};
 
-	function handleKeyDown(event: KeyboardEvent): void {
+	const handleKeyDown = (event: KeyboardEvent): void => {
 		if (event.key === 'Enter' && !event.shiftKey) {
 			if (document.activeElement === inputRef) {
 				event.preventDefault();
 				sendMessage();
 			}
 		}
-	}
+	};
 
-	function scrollToBottom(): void {
+	const scrollToBottom = (): void => {
 		if (scrollViewRef && messagesContainerRef) {
 			scrollViewRef.scrollTo({
 				top: scrollViewRef.scrollHeight,
@@ -133,7 +129,7 @@
 			});
 			isAtBottom = true;
 		}
-	}
+	};
 </script>
 
 <div class="flex h-full max-h-full min-h-full w-full flex-col">

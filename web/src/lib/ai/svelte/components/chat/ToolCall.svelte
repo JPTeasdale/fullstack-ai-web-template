@@ -8,7 +8,7 @@
 	const toolCall = $derived(props.item);
 
 	// Formatted display name based on tool type
-	const displayName = $derived(() => {
+	const displayName = $derived.by(() => {
 		switch (toolCall.type) {
 			case 'web_search_call':
 				return 'Web Search';
