@@ -4,7 +4,8 @@
 		ResponseInputMessageItem,
 		ResponseOutputMessage
 	} from 'openai/resources/responses/responses';
-	import TextAnnotations from './TextAnnotations.svelte';
+	import MessageAnno from './chat_items/MessageAnnotations.svelte';
+	import UserMessage from './chat_items/UserMessage.svelte';
 
 	const props: {
 		message: ResponseOutputMessage | ResponseInputMessageItem;
@@ -15,23 +16,7 @@
 
 <div class="container text-sm">
 	{#if message.role === 'user'}
-		<div class="user-message-container">
-			<div class="rounded-lg bg-gray-100 p-2 px-4">
-				<div class="content">
-					{#each message.content as content}
-						{#if content.type === 'input_text'}
-							{@html marked(content.text || '')}
-						{:else if content.type === 'input_image'}
-							<img src={content.image_url} alt={content.detail} />
-						{:else if content.type === 'input_file'}
-							<div class="rounded-lg bg-gray-100 p-2 px-4">
-								{content.filename}
-							</div>
-						{/if}
-					{/each}
-				</div>
-			</div>
-		</div>
+		<UserMessage {message} />
 	{:else if message.role === 'assistant'}
 		<div class="assistant-message-container">
 			<div class="assistant-message-bubble prose-sm">
@@ -41,7 +26,7 @@
 						{@const annotations = content.annotations || []}
 						{@html marked(content.text || '')}
 						{#if !content.done}<span class="dot"></span>{/if}
-						<TextAnnotations {annotations} />
+						<MessageAnnotations {annotations} />
 					{:else if content.type === 'refusal'}
 						<div class="bg-destructive text-destructive-foreground w-full rounded-lg p-2 px-4">
 							{@html marked(content.refusal || '')}
@@ -58,13 +43,6 @@
 	.container {
 		padding: 6px;
 	}
-
-	.user-message-container {
-		display: flex;
-		flex-direction: row;
-		justify-content: flex-end;
-	}
-
 	.assistant-message-container {
 		display: flex;
 		flex-direction: row;

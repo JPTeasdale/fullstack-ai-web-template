@@ -8,16 +8,18 @@
 	import { browser } from '$app/environment';
 	import { fade } from 'svelte/transition';
 
-	import ToolCall from './ToolCall.svelte';
-	import Message from './Message.svelte';
-	import Annotations from './TextAnnotations.svelte';
-	import Reasoning from './Reasoning.svelte';
+	import ToolCall from './chat_items/ToolCall.svelte';
+	import Reasoning from './chat_items/Reasoning.svelte';
 
 	import type { ConversationItem } from '$lib/ai/types';
 	import { textautosize } from '$lib/utils/textautosize';
 	import { ArrowDown, ArrowUp } from '@lucide/svelte';
-	import ImageGeneration from './ImageGeneration.svelte';
-	import FunctionCall from './FunctionCall.svelte';
+	import ImageGeneration from './chat_items/ImageGeneration.svelte';
+	import FunctionCall from './chat_items/FunctionCall.svelte';
+	import UserMessage from './chat_items/UserMessage.svelte';
+	import MessageContent from './chat_items/MessageContent.svelte';
+	import MessageRefusal from './chat_items/MessageRefusal.svelte';
+	import type { ResponseOutputText } from 'openai/resources/responses/responses';
 
 	// Props using SvelteKit 5 runes
 	const props: {
@@ -26,6 +28,7 @@
 		generating?: boolean;
 		placeholder?: string;
 		slotAboveInput?: Snippet<[]>;
+		itemTextContent?: Snippet<[ResponseOutputText]>;
 	} = $props();
 
 	// Create state from props with defaults
@@ -139,11 +142,12 @@
 		class="scroll-view flex w-full justify-center"
 		onscroll={handleScroll}
 	>
-		<div bind:this={messagesContainerRef} class="messages-container max-w-xl">
+		<div bind:this={messagesContainerRef} class="h-full w-full max-w-xl flex flex-col gap-2">
 			{#each items as item, index}
 				{@const isLast = index === items.length - 1}
 				<div
-					style:min-height={isLast ? 'calc(100dvh - 100px)' : undefined}
+					class="w-full"
+					style:min-height={isLast ? '100%' : undefined}
 					bind:this={messageRefs[index]}
 				>
 					{#if item.type === 'function_call'}
@@ -151,9 +155,21 @@
 					{:else if item.type === 'reasoning'}
 						<Reasoning {item} />
 					{:else if item.type === 'message'}
-						<div class="message-wrapper">
-							<Message message={item} />
-						</div>
+						{#if item.role === 'user'}
+							<UserMessage message={item} />
+						{:else}
+							{#each item.content as content}
+								{#if content.type === 'output_text'}
+									{#if props.itemTextContent}
+										{@render props.itemTextContent(content)}
+									{:else}
+										<MessageContent {content} />
+									{/if}
+								{:else if content.type === 'refusal'}
+									<MessageRefusal {content} />
+								{/if}
+							{/each}
+						{/if}
 					{:else if item.type === 'image_generation_call'}
 						<ImageGeneration {item} />
 					{:else if item.type === 'web_search_call' || item.type === 'file_search_call'}
@@ -245,15 +261,6 @@
 		flex: 1;
 		padding-top: 4px;
 	}
-
-	.message-wrapper {
-		max-width: 100%;
-		overflow-x: scroll;
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-	}
-
 	.input-container {
 		flex: 0;
 		padding: 12px;

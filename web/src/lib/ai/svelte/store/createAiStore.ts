@@ -1,6 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { errorStr } from '$lib/utils/error';
 import { handleStreamEvents } from '$lib/ai/client/handle_stream_events';
+import { parse as parsePartial } from 'partial-json';
 import type {
 	AppFunctionCallItem,
 	AiToolResult,
@@ -20,12 +21,12 @@ type HandleResponseMeta = {
 	apiPath: string;
 };
 
-type ConversationStoreOptions<T extends AiFunctionCallDefinitions> = {
+type AiStoreOptions<T extends AiFunctionCallDefinitions> = {
 	initialConversation?: ConversationItem[];
 	handleAiFunctionCall: HandleFunctionCallFunction<T>;
 };
 
-export class ConversationStore<T extends AiFunctionCallDefinitions> {
+export class AiConversationStore<T extends AiFunctionCallDefinitions> {
 	readonly conversation = writable<ConversationItem[]>([]);
 	readonly generating = writable(false);
 	readonly conversationError = writable('');
@@ -36,7 +37,7 @@ export class ConversationStore<T extends AiFunctionCallDefinitions> {
 		fnCall: AppFunctionCallItem<T>
 	) => Promise<LocalFunctionCallResult>;
 
-	constructor(opts: ConversationStoreOptions<T>) {
+	constructor(opts: AiStoreOptions<T>) {
 		this.conversation.set(opts.initialConversation || []);
 		this.handleAiFunctionCall = opts.handleAiFunctionCall;
 	}

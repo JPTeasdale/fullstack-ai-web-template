@@ -43,6 +43,7 @@
 	}
 
 	function handlerMouseUp() {
+		stopResize();
 		if (!isCollapsed && !hasResized) {
 			isCollapsed = true;
 		}
@@ -61,7 +62,7 @@
 </script>
 
 <div
-	class="relative flex h-screen"
+	class="relative flex h-full"
 	style:width={isCollapsed ? '0' : sidebarWidth + 'px'}
 	style:min-width={isCollapsed ? '0' : sidebarWidth + 'px'}
 	style:max-width={isCollapsed ? '0' : sidebarWidth + 'px'}
@@ -69,23 +70,25 @@
 	class:duration-250={isCollapsed || !isResizing}
 >
 	<div
-		class="absolute top-0 bottom-0 -left-0.5 z-10 flex cursor-ew-resize items-center"
+		class="top-22 fixed bottom-0 right-0 z-10"
 		role="separator"
 		aria-orientation="horizontal"
 		tabindex="-1"
-		onmousedown={handleMouseDown}
-		onmouseup={handlerMouseUp}
 	>
 		<!-- Resize / collapse handle -->
 		<div
-			class="absolute rounded bg-gray-300 opacity-50 transition-all duration-200 hover:animate-pulse hover:bg-blue-400 hover:opacity-100"
-			style:right={isCollapsed ? '8px' : '0'}
-			style:top={isCollapsed ? '86px' : 'calc(50vh - 32px - 8px)'}
+			class="d relative cursor-ew-resize rounded bg-gray-300 opacity-50 hover:animate-pulse hover:bg-blue-400 hover:opacity-100"
+			style:top={isCollapsed ? '0px' : 'calc(50% - 32px - 8px)'}
+			style:right={isCollapsed ? '8px' : `${sidebarWidth + 2}px`}
+			class:transition-all={!isResizing}
+			class:duration-200={!isResizing}
 			class:h-5={isCollapsed}
 			class:h-16={!isCollapsed}
 			class:w-1={!isCollapsed}
 			class:w-5={isCollapsed}
 			class:cursor-pointer={isCollapsed}
+			onmousedown={handleMouseDown}
+			onmouseup={handlerMouseUp}
 		>
 			{#if isCollapsed}
 				<div in:fade={{ delay: 250 }}>
@@ -96,13 +99,14 @@
 	</div>
 	{#if !isCollapsed}
 		<div
-			in:fade={{ delay: 100 }}
-			class="fixed top-0 right-0 bottom-0 overflow-hidden border-l border-gray-200 bg-white shadow-lg"
+			class="top-22 fixed bottom-0 right-0 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
 			style:width={isCollapsed ? '0' : sidebarWidth + 'px'}
 			style:min-width={isCollapsed ? '0' : sidebarWidth + 'px'}
 			style:max-width={isCollapsed ? '0' : sidebarWidth + 'px'}
 		>
-			{@render children()}
+			<div class="flex h-full w-full" in:fade={{ delay: 100 }}>
+				{@render children()}
+			</div>
 		</div>
 	{/if}
 </div>

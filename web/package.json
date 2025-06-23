@@ -70,10 +70,12 @@
 		"marked": "^15.0.12",
 		"npm": "^11.4.2",
 		"openai": "^5.3.0",
+		"partial-json": "^0.1.7",
 		"posthog-js": "^1.252.0",
 		"posthog-node": "^5.1.0",
 		"standardwebhooks": "^1.0.0",
 		"stripe": "^18.2.1",
-		"tailwind-merge": "^3.3.1"
+		"tailwind-merge": "^3.3.1",
+		"zod-deep-partial": "^1.0.0"
 	}
 }

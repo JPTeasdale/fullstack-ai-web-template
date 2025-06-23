@@ -1,5 +1,6 @@
 import { zodTextFormat } from 'openai/helpers/zod.mjs';
 import { z } from 'zod';
+import { zodDeepPartial } from 'zod-deep-partial';
 
 export const TodoExampleSchema = z.object({
 	todos: z.array(
@@ -13,9 +14,9 @@ export const TodoExampleSchema = z.object({
 	)
 });
 
-export const TodoExampleSchemaPartial = TodoExampleSchema.partial();
-
 export const formatTodoList = zodTextFormat(TodoExampleSchema, 'todo_list');
+
+export const TodoExampleSchemaPartial = zodDeepPartial(TodoExampleSchema);
 
 export type TodoExampleList = z.infer<typeof TodoExampleSchema>;
 export type TodoExampleListPartial = z.infer<typeof TodoExampleSchemaPartial>;

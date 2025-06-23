@@ -1,3 +1,4 @@
+import { formatTodoList } from '$lib/ai/schemas/todo_example_schema';
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
 import type { RequestEvent } from './$types';
 
@@ -11,7 +12,10 @@ export async function POST(event: RequestEvent) {
 		},
 		openai: {
 			model: 'gpt-4.1',
-			stream: true
+			stream: true,
+			text: {
+				format: formatTodoList
+			}
 		}
 	});
 }

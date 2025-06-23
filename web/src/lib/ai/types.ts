@@ -20,7 +20,9 @@ export type OpenAIResponse = Response;
 
 export type ServerConversationItem = ResponseOutputItem;
 
-export type ConversationItem = ServerConversationItem | ResponseInputMessageItem;
+export type UserInputMessage = ResponseInputMessageItem;
+
+export type ConversationItem = ServerConversationItem | UserInputMessage;
 
 export type TextAnnotation =
 	| ResponseOutputText.FileCitation
