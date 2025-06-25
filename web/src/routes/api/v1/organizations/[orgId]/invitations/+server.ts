@@ -2,11 +2,10 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { Database } from '$lib/types/generated/supabase.types';
 import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
-import { url } from 'node:inspector';
 
 type MemberRole = Database['public']['Enums']['member_role'];
 
-export const POST: RequestHandler = async ({ locals: { supabase, user}, params, request }) => {
+export const POST: RequestHandler = async ({ locals: { supabase, user}, params, request, url }) => {
 	const { orgId } = params;
 	const { email, role } = await request.json() as { email: string; role: MemberRole };
 
@@ -79,7 +78,7 @@ export const POST: RequestHandler = async ({ locals: { supabase, user}, params, 
 
 
 	getInviteToOrgTemplate({
-		inviteLink: `${url.origin}/auth/accept`,
+		inviteLink: `${url.origin}/invitations`,
 		orgName: organization?.name || '',
 		email: email,
 		inviterName: user.email || '',
