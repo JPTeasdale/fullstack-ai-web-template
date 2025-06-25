@@ -9,6 +9,8 @@ import type Stripe from 'stripe';
 import type { AppSupabaseClient } from '$lib/types/app.types';
 import type OpenAI from 'openai';
 import type { SESClient } from '@aws-sdk/client-ses';
+import type { DurableObjectNamespace, DurableObjectStub } from '@cloudflare/workers-types';
+import type { RateLimiter } from '$lib/durable_objects/RateLimiter';
 
 declare global {
 	namespace App {
@@ -23,6 +25,7 @@ declare global {
 			openai: OpenAI;
 			ses: SESClient;
 			r2: R2Bucket;
+			rateLimit: (name: string) => Promise<{ allowed: boolean }>;
 			trace: {
 				distinctId: string;
 				orgId: string;
@@ -32,6 +35,7 @@ declare global {
 		interface Platform {
 			env: {
 				FILE_STORAGE: R2Bucket;
+				RATE_LIMITER: DurableObjectNamespace<RateLimiter>;
 			};
 		}
 		interface PageData {

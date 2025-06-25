@@ -16,6 +16,7 @@ export interface EventCallbacks<T extends AiFunctionCallDefinitions> {
 	onItemAdded?(message: ServerConversationItem): void;
 	onItemUpdated?(message: ServerConversationItem): void;
 	onComplete?(responseId: string): void;
+	onError?(error: Error): void;
 }
 
 // Create a processor that maintains state across multiple calls

@@ -3,10 +3,14 @@ import { json } from '@sveltejs/kit';
 import type { Tool } from 'openai/resources/responses/responses.mjs';
 import type { RequestEvent } from './$types';
 
-
 export async function POST(event: RequestEvent) {
 	const { orgId } = event.params;
 	const { supabase } = event.locals;
+
+	const limiter = await event.locals.rateLimit('basic');
+	if (!limiter?.allowed) {
+		return json({ error: 'Rate limit exceeded' }, { status: 429 });
+	}
 
 	const { data: organization, error } = await supabase
 		.from('organizations')

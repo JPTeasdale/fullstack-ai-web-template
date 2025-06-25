@@ -1,8 +1,8 @@
 import { createEventProcessor, type EventCallbacks } from './create_event_processor';
-import { type FunctionCallDefinitions } from '../types';
+import { type AiFunctionCallDefinitions } from '../types';
 import { parseStream } from './parse_stream';
 
-export async function handleStreamEvents<T extends FunctionCallDefinitions>(
+export async function handleStreamEvents<T extends AiFunctionCallDefinitions>(
 	res: Response,
 	opts: EventCallbacks<T>
 ) {
@@ -14,7 +14,7 @@ export async function handleStreamEvents<T extends FunctionCallDefinitions>(
 			return await processEvent(event);
 		},
 		(error) => {
-			console.error('handleAiStreamingResponse Error', error);
+			opts.onError?.(error);
 		}
 	);
 }

@@ -6,7 +6,7 @@
 <script lang="ts">
 	import { onMount, onDestroy, type Snippet } from 'svelte';
 	import { browser } from '$app/environment';
-	import { fade } from 'svelte/transition';
+	import { fade, slide } from 'svelte/transition';
 
 	import ToolCall from './chat_items/ToolCall.svelte';
 	import Reasoning from './chat_items/Reasoning.svelte';
@@ -24,11 +24,12 @@
 	// Props using SvelteKit 5 runes
 	const props: {
 		items?: ConversationItem[];
+		error?: string;
 		onSendMessage?: (message: string) => void;
 		generating?: boolean;
 		placeholder?: string;
 		slotAboveInput?: Snippet<[]>;
-		itemTextContent?: Snippet<[ResponseOutputText]>;
+		renderFormattedOutput?: Snippet<[ResponseOutputText]>;
 	} = $props();
 
 	// Create state from props with defaults
@@ -142,7 +143,7 @@
 		class="scroll-view flex w-full justify-center"
 		onscroll={handleScroll}
 	>
-		<div bind:this={messagesContainerRef} class="h-full w-full max-w-xl flex flex-col gap-2">
+		<div bind:this={messagesContainerRef} class="flex h-full w-full max-w-xl flex-col gap-2">
 			{#each items as item, index}
 				{@const isLast = index === items.length - 1}
 				<div
@@ -160,8 +161,8 @@
 						{:else}
 							{#each item.content as content}
 								{#if content.type === 'output_text'}
-									{#if props.itemTextContent}
-										{@render props.itemTextContent(content)}
+									{#if content.formattedType && props.renderFormattedOutput}
+										{@render props.renderFormattedOutput(content)}
 									{:else}
 										<MessageContent {content} />
 									{/if}
@@ -200,7 +201,16 @@
 
 	<div class="flex w-full flex-col items-center">
 		<div class="flex w-full max-w-xl flex-col justify-center">
+			<div class="w-full relative">
+			{#if props.error}
+				<div class="absolute bottom-0 left-0 right-0 p-4" transition:slide={{ duration: 200 }}>
+					<div class="text-sm border border-red-500 text-center bg-red-100 text-red-500 rounded-sm " >
+						{props.error}
+					</div>
+				</div>
+			{/if}
 			{@render props.slotAboveInput?.()}
+			</div>
 
 			<!-- Input area -->
 			<div class="input-container w-full bg-white shadow-lg" bind:this={inputContainerRef}>

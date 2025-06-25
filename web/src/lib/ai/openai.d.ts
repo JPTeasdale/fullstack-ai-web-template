@@ -33,5 +33,6 @@ declare module 'openai/resources/responses/responses' {
 	interface ResponseOutputText {
 		done?: boolean;
 		parts?: string[];
+		formattedType?: string;
 	}
 }

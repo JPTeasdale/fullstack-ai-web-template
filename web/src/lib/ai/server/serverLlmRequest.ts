@@ -4,12 +4,15 @@ import type { AiRequestBody, AiFunctionCallDefinitions, FunctionCallMap } from '
 import { streamResponse } from './network/streamResponse';
 import { Stream } from 'openai/streaming';
 import { processServerFunctionCall } from './network/serverFunctionCalls';
+import { callFunctionTransform, setOutputItemFormattedTypeTransform } from './network/streamTransforms';
+import { applyOutputItemFormat } from './network/applyOutputItemFormat';
 
 interface LLMOptions<T extends RequestEvent, F extends AiFunctionCallDefinitions> {
 	getInitialSystemPrompt: (event: T) => Promise<string>;
 	getInitialUserPrompt: (prompt: string | null, event: T) => Promise<string>;
 	functionCallMap?: FunctionCallMap<F>;
 	openai: Omit<ResponseCreateParams, 'input'>;
+	formattedType?: string;
 }
 
 export async function handleLlmRequest<
@@ -59,11 +62,16 @@ export async function handleLlmRequest<
 		});
 
 		if (response instanceof Stream) {
-			return streamResponse(response, opts.functionCallMap);
+			return streamResponse(response, [
+				callFunctionTransform(opts.functionCallMap),
+				setOutputItemFormattedTypeTransform(opts.formattedType)
+			]);
 		} else {
 			for (const item of response.output) {
 				if (item.type === 'function_call' && opts.functionCallMap) {
 					await processServerFunctionCall(item, opts.functionCallMap);
+				} else if (item.type === 'message') {
+					 applyOutputItemFormat(item, opts.formattedType);
 				}
 			}
 			return json(response);

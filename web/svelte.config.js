@@ -3,7 +3,14 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 const config = {
 	preprocess: vitePreprocess(),
-	kit: { adapter: adapter() }
+	kit: {
+		adapter: adapter({
+			platformProxy: {
+				environment: 'dev',
+				persist: true
+			}
+		})
+	}
 };
 
 export default config;

@@ -152,16 +152,16 @@
 	}
 </script>
 
-<div class="container mx-auto p-6 max-w-6xl">
+<div class="container mx-auto max-w-6xl">
 	<div class="mb-8">
-		<h1 class="text-3xl font-bold mb-2">Files</h1>
+		<h1 class="mb-2 text-3xl font-bold">Files</h1>
 		<p class="text-gray-600">Upload and manage your organization's files</p>
 	</div>
 
 	<!-- Upload Area -->
 	<div class="mb-8">
 		<div
-			class="border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 {isDragging
+			class="rounded-lg border-2 border-dashed p-8 text-center transition-colors duration-200 {isDragging
 				? 'border-blue-500 bg-blue-50'
 				: 'border-gray-300 hover:border-gray-400'}"
 			ondragover={handleDragOver}
@@ -179,19 +179,15 @@
 			/>
 
 			<div class="flex flex-col items-center">
-				<div class="text-4xl mb-4">📁</div>
-				<p class="text-lg font-medium mb-2">
+				<div class="mb-4 text-4xl">📁</div>
+				<p class="mb-2 text-lg font-medium">
 					{isDragging ? 'Drop files here' : 'Drag and drop files here'}
 				</p>
-				<p class="text-sm text-gray-500 mb-4">or</p>
-				<Button
-					onclick={() => fileInput?.click()}
-					disabled={isUploading}
-					variant="default"
-				>
+				<p class="mb-4 text-sm text-gray-500">or</p>
+				<Button onclick={() => fileInput?.click()} disabled={isUploading} variant="default">
 					Choose Files
 				</Button>
-				<p class="text-xs text-gray-500 mt-4">
+				<p class="mt-4 text-xs text-gray-500">
 					Supported: Images (JPEG, PNG, GIF, WebP) and Documents (PDF, Word, Text)
 				</p>
 			</div>
@@ -200,13 +196,13 @@
 		<!-- Upload Progress -->
 		{#if isUploading}
 			<div class="mt-4">
-				<div class="flex items-center justify-between mb-2">
+				<div class="mb-2 flex items-center justify-between">
 					<span class="text-sm font-medium">Uploading...</span>
 					<span class="text-sm text-gray-500">{uploadProgress}%</span>
 				</div>
-				<div class="w-full bg-gray-200 rounded-full h-2">
+				<div class="h-2 w-full rounded-full bg-gray-200">
 					<div
-						class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+						class="h-2 rounded-full bg-blue-500 transition-all duration-300"
 						style="width: {uploadProgress}%"
 					></div>
 				</div>
@@ -215,7 +211,7 @@
 
 		<!-- Error Message -->
 		{#if uploadError}
-			<div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+			<div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
 				<p class="text-sm text-red-700">{uploadError}</p>
 			</div>
 		{/if}
@@ -223,28 +219,30 @@
 
 	<!-- Files List -->
 	<div>
-		<h2 class="text-xl font-semibold mb-4">Uploaded Files ({data.files.length})</h2>
+		<h2 class="mb-4 text-xl font-semibold">Uploaded Files ({data.files.length})</h2>
 
 		{#if data.files.length === 0}
-			<div class="text-center py-12 bg-gray-50 rounded-lg">
+			<div class="rounded-lg bg-gray-50 py-12 text-center">
 				<p class="text-gray-500">No files uploaded yet</p>
 			</div>
 		{:else}
 			<div class="grid gap-4">
 				{#each data.files as file}
-					<div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+					<div
+						class="rounded-lg border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md"
+					>
 						<div class="flex items-center justify-between">
 							<div class="flex items-center space-x-4">
 								<div class="text-2xl">{getFileIcon(file.mime_type)}</div>
 								<div>
 									<h3 class="font-medium text-gray-900">{file.name}</h3>
-									<div class="flex items-center space-x-4 mt-1">
+									<div class="mt-1 flex items-center space-x-4">
 										<span class="text-sm text-gray-500">{formatBytes(file.size)}</span>
 										<span class="text-sm text-gray-500">•</span>
 										<span class="text-sm text-gray-500">{formatDate(file.created_at)}</span>
 										{#if file.openai_file_id}
 											<span class="text-sm text-gray-500">•</span>
-											<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">
+											<span class="rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">
 												AI-Ready
 											</span>
 										{/if}
@@ -255,7 +253,11 @@
 								<Button
 									variant="outline"
 									size="sm"
-									onclick={() => window.open(`/api/v1/organizations/${$page.params.orgId}/files/${file.id}`, '_blank')}
+									onclick={() =>
+										window.open(
+											`/api/v1/organizations/${$page.params.orgId}/files/${file.id}`,
+											'_blank'
+										)}
 								>
 									Download
 								</Button>
@@ -263,7 +265,7 @@
 									variant="outline"
 									size="sm"
 									onclick={() => deleteFile(file.id)}
-									class="text-red-600 hover:text-red-700 hover:bg-red-50"
+									class="text-red-600 hover:bg-red-50 hover:text-red-700"
 								>
 									Delete
 								</Button>

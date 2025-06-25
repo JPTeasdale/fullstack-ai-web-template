@@ -3,7 +3,7 @@
 	import Header from '$lib/components/Header/Header.svelte';
 	import Sidebar from '$lib/components/Sidebar/Sidebar.svelte';
 	import Chat from '$lib/ai/svelte/components/chat/Chat.svelte';
-	import { ConversationStore } from '$lib/ai/svelte/store/conversationStore';
+	import { AiConversationStore } from '$lib/ai/svelte/store/createAiStore';
 	import {
 		URL_API_SIGNOUT,
 		URL_DASHBOARD,
@@ -16,6 +16,7 @@
 	import { Cog, Building2, Users, CreditCard, Files } from '@lucide/svelte';
 	import SidebarLink from '$lib/components/Sidebar/SidebarLink.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import FullLayout from '$lib/components/Layout/FullLayout.svelte';
 	let { children, data } = $props();
 	const user = $derived(data.user);
 	const organization = $derived(data.organization);
@@ -30,7 +31,7 @@
 		}
 	};
 
-	const { generating, conversation, sendMessage } = new ConversationStore({
+	const { generating, conversation, sendMessage, conversationError } = new AiConversationStore({
 		handleAiFunctionCall: () => console.log
 	});
 
@@ -40,8 +41,8 @@
 	};
 </script>
 
-<div class="flex h-screen grow">
-	<div class="flex h-screen min-h-screen flex-1 flex-col bg-gray-50">
+<FullLayout>
+	{#snippet header()}
 		<Header {user} {onSignOut}>
 			{#snippet contextItems()}
 				<Button
@@ -64,41 +65,25 @@
 				</Button>
 			{/snippet}
 		</Header>
-		<div class="flex grow">
-			<Sidebar>
-				{#snippet items(isExpanded)}
-					<SidebarLink
-						{isExpanded}
-						href={urlOrganization(orgId)}
-						label={organization.name}
-						Icon={Building2}
-					/>
-					<SidebarLink
-						{isExpanded}
-						href={urlOrganizationMembers(orgId)}
-						label="Members"
-						Icon={Users}
-					/>
-					<SidebarLink
-						{isExpanded}
-						href={urlOrganizationFiles(orgId)}
-						label="Files"
-						Icon={Files}
-					/>
-					<SidebarLink
-						{isExpanded}
-						href={urlOrganizationSubscription(orgId)}
-						label="Subscription"
-						Icon={CreditCard}
-					/>
-				{/snippet}
-			</Sidebar>
-			<main class="flex w-full flex-1 px-4 py-8 sm:px-6 lg:px-8">
-				{@render children()}
-			</main>
-		</div>
-	</div>
-	<AiWindow>
-		<Chat onSendMessage={handleSendMessage} generating={$generating} {items} />
-	</AiWindow>
-</div>
+	{/snippet}
+	{#snippet sideNavItems(isExpanded)}
+		<SidebarLink
+			{isExpanded}
+			href={urlOrganization(orgId)}
+			label={organization.name}
+			Icon={Building2}
+		/>
+		<SidebarLink {isExpanded} href={urlOrganizationMembers(orgId)} label="Members" Icon={Users} />
+		<SidebarLink {isExpanded} href={urlOrganizationFiles(orgId)} label="Files" Icon={Files} />
+		<SidebarLink
+			{isExpanded}
+			href={urlOrganizationSubscription(orgId)}
+			label="Subscription"
+			Icon={CreditCard}
+		/>
+	{/snippet}
+	{#snippet chat()}
+		<Chat onSendMessage={handleSendMessage} generating={$generating} {items} error={$conversationError} />
+	{/snippet}
+	{@render children()}
+</FullLayout>

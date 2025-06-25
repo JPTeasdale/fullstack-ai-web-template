@@ -1,15 +1,15 @@
 {
-	"name": "jwks-updater",
+	"name": "durable-objects",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --test-scheduled",
-		"start": "wrangler dev --test-scheduled",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
 		"typescript": "^5.5.2",
-		"wrangler": "^4.20.0"
+		"wrangler": "^4.21.1"
 	}
 }

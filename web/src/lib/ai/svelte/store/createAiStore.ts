@@ -1,7 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { errorStr } from '$lib/utils/error';
 import { handleStreamEvents } from '$lib/ai/client/handle_stream_events';
-import { parse as parsePartial } from 'partial-json';
 import type {
 	AppFunctionCallItem,
 	AiToolResult,
@@ -46,6 +45,10 @@ export class AiConversationStore<T extends AiFunctionCallDefinitions> {
 		const callResults: AiToolResult[] = [];
 
 		await handleStreamEvents<T>(res, {
+			onError: (error) => {
+				console.error('Error handling response:', error);
+				this.conversationError.set(errorStr(error));
+			},
 			onFunctionCall: async (fnCall) => {
 				if (fnCall.call_id) {
 					if (fnCall.meta.call_from_server) {
@@ -113,6 +116,7 @@ export class AiConversationStore<T extends AiFunctionCallDefinitions> {
 	};
 
 	sendMessage = async (apiPath: string, prompt: string) => {
+		this.conversationError.set('');
 		if (prompt.length) {
 			this.conversation.update((conv) => [
 				...conv,

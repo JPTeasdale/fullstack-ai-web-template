@@ -20,7 +20,7 @@ export async function parseStream(
 	}
 
 	if (!res.ok) {
-		return onError(new Error('Failed to fetch chat'));
+		return onError(new Error(res.statusText));
 	}
 
 	const reader = res.body?.getReader();

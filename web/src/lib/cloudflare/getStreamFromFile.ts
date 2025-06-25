@@ -1,4 +1,3 @@
-import { FixedLengthStream } from '@cloudflare/workers-types';
 
 async function streamToArrayBuffer(stream: ReadableStream<Uint8Array<ArrayBufferLike>>) {
   const reader = stream.getReader();

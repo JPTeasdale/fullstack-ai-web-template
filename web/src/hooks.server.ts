@@ -41,8 +41,8 @@ const log: Handle = async ({ event, resolve }) => {
 
 export const handle = sequence(
 	log,
-	hookClients,
 	hookSupabaseSession,
+	hookClients,
 	hookApi,
 	hookDisableDevTools,
 	hookRedirects

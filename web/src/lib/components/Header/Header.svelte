@@ -32,13 +32,13 @@
 					<Button
 						type="button"
 						variant="ghost"
-						class="focus:ring-primary text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 space-x-1"
+						class="focus:ring-primary space-x-1 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
 						id="user-menu-button"
 						aria-haspopup="true"
 					>
 						<!-- You might want a user avatar here eventually -->
 						<!-- <img class="h-8 w-8 rounded-full" src="user-avatar.png" alt=""> -->
-						<span class="ml-2 text-sm font-medium text-gray-700 lg:block hidden sm:block">
+						<span class="ml-2 hidden text-sm font-medium text-gray-700 sm:block lg:block">
 							<span class="sr-only">Open user menu for </span>{user.email}
 						</span>
 						<svg
@@ -58,8 +58,8 @@
 					</Button>
 				</PopoverTrigger>
 
-				<PopoverContent class="mr-2">
-					<div class="flex flex-col gap-2 sm:hidden">
+				<PopoverContent>
+					<div class="test-grey flex flex-col border-b p-4 text-sm sm:hidden">
 						{user.email}
 					</div>
 					{@render contextItems?.()}

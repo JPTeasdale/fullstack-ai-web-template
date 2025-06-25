@@ -14,6 +14,7 @@ export async function POST(params: RequestEvent) {
 		async getInitialUserPrompt(prompt: string | null) {
 			return prompt || '';
 		},
+		formattedType: 'todo_list',
 		openai: {
 			model: 'gpt-4.1',
 			stream: true,

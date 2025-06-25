@@ -20,24 +20,18 @@ export const load: PageServerLoad = async ({ locals: { supabase, supabaseAdmin }
 		const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
 		const subscriptionId = session.subscription as string;
 
-		console.log('subscriptionId', { subscriptionId });
-
 		if (subscriptionId) {
 			const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 			const { appSubscriptionId } = getSubscriptionMetadata(subscription);
 
 			const update = convertStripeSubscription(subscription);
-			console.log('subscription', { subscription, appSubscriptionId, update });
 
-			console.log(
-				'test',
-				await supabaseAdmin
-					.from('subscriptions')
-					.update(update)
-					.eq('id', appSubscriptionId)
-					.select()
-					.single()
-			);
+			await supabaseAdmin
+				.from('subscriptions')
+				.update(update)
+				.eq('id', appSubscriptionId)
+				.select()
+				.single();
 		}
 	}
 
