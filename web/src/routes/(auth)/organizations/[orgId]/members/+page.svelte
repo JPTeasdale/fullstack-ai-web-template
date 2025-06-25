@@ -39,7 +39,7 @@
 		inviteError = '';
 
 		try {
-			const response = await fetch(`/api/v1/organizations/${data.organization?.id}/invite`, {
+			const response = await fetch(`/api/v1/organizations/${data.organization?.id}/invitations`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'

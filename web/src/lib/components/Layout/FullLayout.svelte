@@ -21,7 +21,7 @@
 
 <div class="flex h-screen grow">
 	<div
-		class="max-w-screen flex h-screen max-h-screen min-h-screen flex-1 flex-col overflow-hidden bg-gray-50"
+		class="max-w-screen flex h-screen max-h-screen min-h-screen flex-1 flex-col bg-gray-50"
 	>
 		{#if header}
 			{@render header()}
@@ -30,7 +30,7 @@
 			{#if sideNavItems}
 				<Sidebar items={sideNavItems} />
 			{/if}
-			<main class="flex w-full flex-1 overflow-scroll p-4 pb-16 sm:pb-4">
+			<main class="flex w-full flex-1 p-4 pb-16 sm:pb-4">
 				{@render children()}
 			</main>
 			{#if chat}
@@ -41,7 +41,7 @@
 				</div>
 				{#if isChatOpen}
 					<div
-						class="fixed bottom-0 left-0 right-0 top-0 h-screen w-screen bg-white pb-10 sm:hidden"
+						class="fixed bottom-0 left-0 right-0 top-18 w-screen bg-white pb-10 sm:hidden"
 					>
 						{@render chat()}
 					</div>

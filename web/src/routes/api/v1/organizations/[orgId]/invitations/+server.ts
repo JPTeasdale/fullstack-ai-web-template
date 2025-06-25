@@ -1,12 +1,18 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { Database } from '$lib/types/generated/supabase.types';
+import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
+import { url } from 'node:inspector';
 
 type MemberRole = Database['public']['Enums']['member_role'];
 
-export const POST: RequestHandler = async ({ locals: { supabase }, params, request }) => {
+export const POST: RequestHandler = async ({ locals: { supabase, user}, params, request }) => {
 	const { orgId } = params;
 	const { email, role } = await request.json() as { email: string; role: MemberRole };
+
+	if (!user) {
+		return json({ message: 'Unauthenticatied' }, { status: 400 });
+	}
 
 	// Validate inputs
 	if (!email || !role) {
@@ -17,23 +23,7 @@ export const POST: RequestHandler = async ({ locals: { supabase }, params, reque
 		return json({ message: 'Invalid role' }, { status: 400 });
 	}
 
-	// Get current user
-	const { data: { user }, error: userError } = await supabase.auth.getUser();
-	if (userError || !user) {
-		return json({ message: 'Unauthorized' }, { status: 401 });
-	}
-
-	// Check if current user has permission to invite (must be admin or owner)
-	const { data: currentMember } = await supabase
-		.from('organization_members')
-		.select('role')
-		.eq('organization_id', orgId)
-		.eq('user_id', user.id)
-		.single();
-
-	if (!currentMember || (currentMember.role !== 'admin' && currentMember.role !== 'owner')) {
-		return json({ message: 'You do not have permission to invite members' }, { status: 403 });
-	}
+	const {data: organization} = await supabase.from('organizations').select('name').eq('id', orgId).single();
 
 	// Check if user is already a member
 	const { data: existingUser } = await supabase
@@ -87,8 +77,14 @@ export const POST: RequestHandler = async ({ locals: { supabase }, params, reque
 		return json({ message: 'Failed to create invitation' }, { status: 500 });
 	}
 
-	// TODO: Send invitation email
-	// This would typically be done through a background job or email service
+
+	getInviteToOrgTemplate({
+		inviteLink: `${url.origin}/auth/accept`,
+		orgName: organization?.name || '',
+		email: email,
+		inviterName: user.email || '',
+	})
 
 	return json({ success: true, invitation });
 }; 
+

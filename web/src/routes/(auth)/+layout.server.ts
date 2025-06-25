@@ -11,7 +11,8 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 
 	const [{data: profile}, {data: organizations}] = await Promise.all([
 		supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
-		supabase.from('organizations').select('*')
+		supabase.from('organizations').select('*'),
+		supabase.from('invitations').select('*').eq('status', 'pending')
 	]);
 
 	return {

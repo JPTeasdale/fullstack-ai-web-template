@@ -16,7 +16,7 @@
 	} = $props();
 </script>
 
-<header class="bg-background max-w-screen z-10 shadow sm:m-3 sm:rounded">
+<header class="fixed top-0 left-0 right-0 z-10 bg-background max-w-screen shadow sm:m-3 sm:rounded">
 	<div class="mx-auto flex h-16 items-center justify-between p-4">
 		<a
 			class="flex h-full items-center gap-2 truncate whitespace-nowrap text-xl font-semibold text-gray-900"
@@ -79,3 +79,7 @@
 		{/if}
 	</div>
 </header>
+
+<div class="min-h-18 sm:min-h-20 w-full invisible">
+test
+</div>

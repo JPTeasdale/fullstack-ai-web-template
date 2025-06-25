@@ -7,12 +7,12 @@ const RATE_LIMIT_CONFIG = {
 
 // Durable Object
 export class RateLimiter extends DurableObject {
-	lastRefill: number;
+	lastRefillMs: number;
 	tokens: number;
 
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
-		this.lastRefill = 0;
+		this.lastRefillMs = 0;
 		this.tokens = 5;
 	}
 
@@ -35,8 +35,8 @@ export class RateLimiter extends DurableObject {
 	}
 
 	_refillTokens(config: { capacity: number; refillPerHour: number }) {
-		const now = Date.now();
-		const elapsedMs = now - this.lastRefill;
+		const nowMs = Date.now();
+		const elapsedMs = nowMs - this.lastRefillMs;
 		const elapsedHours = msToHour(elapsedMs);
 		const tokensToAdd = Math.floor(elapsedHours * config.refillPerHour);
 
@@ -45,7 +45,7 @@ export class RateLimiter extends DurableObject {
 
 			// Keep the time remainder for the next refill
 			const timeRemainder = elapsedHours % config.refillPerHour;
-			this.lastRefill = now - hourToMs(timeRemainder);
+			this.lastRefillMs = nowMs - hourToMs(timeRemainder);
 		}
 	}
 }
