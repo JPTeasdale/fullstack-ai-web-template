@@ -6,96 +6,208 @@
 	onMount(() => {
 		mounted = true;
 	});
+
+	// Ticker tape content
+	const tickerItems = [
+		'🚀 Over 10,000+ developers using our template',
+		'⚡ Deploy to production in under 5 minutes',
+		'💰 Save $50,000+ in development costs',
+		'🔒 Enterprise-grade security built-in',
+		'🌍 Global edge deployment with 99.9% uptime',
+		'🎯 Used by startups',
+		'📈 Scale from 0 to 1M users seamlessly',
+		'🛡️ SOC2 compliant infrastructure'
+	];
+
+	// Company logos for carousel
+	const companyLogos = [
+		{ name: 'Vercel', logo: 'https://cdn.worldvectorlogo.com/logos/vercel.svg' },
+		{ name: 'Stripe', logo: 'https://cdn.worldvectorlogo.com/logos/stripe-4.svg' },
+		{ name: 'OpenAI', logo: 'https://cdn.worldvectorlogo.com/logos/openai-2.svg' },
+		{ name: 'Supabase', logo: 'https://cdn.worldvectorlogo.com/logos/supabase-logo-icon.svg' },
+		{ name: 'Cloudflare', logo: 'https://cdn.worldvectorlogo.com/logos/cloudflare.svg' },
+		{ name: 'GitHub', logo: 'https://cdn.worldvectorlogo.com/logos/github-icon-1.svg' },
+		{ name: 'PostHog', logo: 'https://posthog.com/brand/posthog-logo.svg' },
+		{ name: 'Tailwind', logo: 'https://cdn.worldvectorlogo.com/logos/tailwind-css-2.svg' }
+	];
+
+	// Stats for credibility
+	const stats = [
+		{ value: '0', label: 'Stars on GitHub' },
+		{ value: '1', label: 'Active Developer' },
+		{ value: '<50ms', label: 'Global Latency' },
+		{ value: '$0,000M+', label: 'Revenue Generated' }
+	];
 </script>
 
 <svelte:head>
-	<title>Fullstack Web Template - Production-Ready SvelteKit Starter</title>
+	<title>Fullstack Web Template - Enterprise Production-Ready SvelteKit Platform</title>
 	<meta
 		name="description"
-		content="A comprehensive, production-ready fullstack web template with SvelteKit, Supabase, Cloudflare, and modern DevOps practices. Deploy in minutes, not months."
+		content="The #1 enterprise-grade fullstack web template trusted by 10,000+ developers. Built with SvelteKit, Supabase, and Cloudflare. Deploy production-ready applications in minutes."
 	/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </svelte:head>
 
 <div class="bg-background min-h-screen">
+	<!-- Ticker Tape -->
+	<div class="bg-primary/10 border-b border-primary/20 overflow-hidden">
+		<div class="ticker-wrapper">
+			<div class="ticker-content">
+				{#each [...tickerItems, ...tickerItems] as item}
+					<span class="ticker-item text-primary font-medium text-sm px-8">{item}</span>
+				{/each}
+			</div>
+		</div>
+	</div>
+
+	<!-- Announcement Bar -->
+	<div class="bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 border-b border-primary/30">
+		<div class="px-4 py-3 text-center">
+			<p class="text-sm font-medium text-foreground">
+				🎉 <span class="font-semibold">2025 Special:</span> Get 100% off this absolutely free template
+				<a href="#" class="ml-2 text-primary underline underline-offset-2">Claim Offer →</a>
+			</p>
+		</div>
+	</div>
+
 	<!-- Hero Section -->
 	<div class="border-border relative overflow-hidden border-b">
-		<div class="bg-card">
-			<div class="px-4 py-16 sm:px-6 lg:px-8">
-				<div class="mx-auto max-w-4xl text-center">
-					<h1 class="text-foreground text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-						<span class="block">Free Production-Ready</span>
-						<span class="text-primary block"> Ai Web Template </span>
+		<div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5"></div>
+		<div class="bg-card/50 backdrop-blur-sm relative">
+			<div class="px-4 py-20 sm:px-6 lg:px-8">
+				<div class="mx-auto max-w-5xl text-center">
+					<!-- Trust badges -->
+					<div class="flex justify-center gap-4 mb-8">
+						<span class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 rounded-full px-3 py-1 border border-border">
+							<svg class="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+								<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+							</svg>
+							Grass Fed and Finished
+						</span>
+						<span class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 rounded-full px-3 py-1 border border-border">
+							<svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+								<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+							</svg>
+							USDA Organic
+						</span>
+						<span class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 rounded-full px-3 py-1 border border-border">
+							<svg class="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+								<path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+							</svg>
+							Y Combinator Exists
+						</span>
+					</div>
+
+					<h1 class="text-foreground text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl {mounted ? 'animate-fade-in' : 'opacity-0'}">
+						<span class="block">Ship Enterprise Apps</span>
+						<span class="text-primary block bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+							10x Faster
+						</span>
 					</h1>
-					<p class="text-muted-foreground mx-auto mt-6 max-w-3xl text-lg sm:text-xl">
-						Start from a strong foundation. Deploy your next SaaS, web app, or startup in minutes
-						with this comprehensive template featuring modern tech stack, authentication, payments,
-						and deployment automation.
+					<p class="text-muted-foreground mx-auto mt-8 max-w-3xl text-xl sm:text-2xl leading-relaxed {mounted ? 'animate-fade-in-delay' : 'opacity-0'}">
+						The most comprehensive production-ready fullstack template. Trusted by <span class="text-foreground font-semibold">10,000+ developers</span> and <span class="text-foreground font-semibold">Fortune 500 companies</span>.
 					</p>
-					<div class="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-						<Button size="xl" href="https://github.com/jpteasdale/fullstack-ai-web-template">
-							<svg class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+					<div class="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center {mounted ? 'animate-fade-in-delay-2' : 'opacity-0'}">
+						<Button size="xl" href="https://github.com/jpteasdale/fullstack-ai-web-template" class="group">
+							<svg class="mr-2 h-5 w-5 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
 								<path
 									fill-rule="evenodd"
 									d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
 									clip-rule="evenodd"
 								/>
 							</svg>
-							Clone on GitHub</Button
-						>
-						<Button href="#demo" size="xl" variant="outline">View Demo</Button>
+							Start Building Now
+						</Button>
+						<Button href="#demo" size="xl" variant="outline" class="group">
+							See Live Demo
+							<svg class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
+							</svg>
+						</Button>
+					</div>
+
+					<!-- Quick stats -->
+					<div class="mt-16 grid grid-cols-2 gap-8 sm:grid-cols-4 {mounted ? 'animate-fade-in-delay-3' : 'opacity-0'}">
+						{#each stats as stat}
+							<div>
+								<div class="text-3xl font-bold text-primary">{stat.value}</div>
+								<div class="text-sm text-muted-foreground">{stat.label}</div>
+							</div>
+						{/each}
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 
+	<!-- Logo Carousel Section -->
+	<div class="border-b border-border bg-muted/30 py-12">
+		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+			<p class="text-center text-sm font-medium text-muted-foreground mb-8 uppercase tracking-wider">
+				Here are logos from completely unaffiliated companies
+			</p>
+			<div class="logo-carousel-wrapper overflow-hidden">
+				<div class="logo-carousel flex items-center gap-16">
+					{#each [...companyLogos, ...companyLogos] as company}
+						<img
+							src={company.logo}
+							alt={company.name}
+							class="h-8 w-auto opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0"
+						/>
+					{/each}
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Features Grid -->
-	<div id="features" class="bg-muted/50 px-4 py-20 sm:px-6 lg:px-8">
+	<div id="features" class="bg-muted/50 px-4 py-24 sm:px-6 lg:px-8">
 		<div class="mx-auto max-w-7xl">
 			<div class="text-center">
-				<h2 class="text-foreground text-3xl font-bold sm:text-4xl">
-					Everything You Need to Ship Fast
+				<span class="text-primary font-semibold text-sm uppercase tracking-wider">Complete Platform</span>
+				<h2 class="text-foreground text-4xl font-bold sm:text-5xl mt-2">
+					Everything You Need to Ship Enterprise Apps
 				</h2>
-				<p class="text-muted-foreground mt-4 text-lg">
-					A complete, production-ready stack with modern technologies and best practices
+				<p class="text-muted-foreground mt-6 text-xl max-w-3xl mx-auto">
+					Built by a developer who has shipped to millions of users.
 				</p>
 			</div>
 
-			<div class="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+			<div class="mt-20 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 				<!-- Frontend -->
 				<div
-					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg"
+					class="bg-card border-border hover:border-primary/50 rounded-2xl border p-8 transition-all hover:shadow-xl hover:-translate-y-1 group"
 				>
-					<div class="flex items-center">
-						<div class="bg-chart-1/20 border-chart-1/30 rounded-lg border p-2">
-							<svg class="text-chart-1 h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+					<div class="flex items-center justify-between mb-6">
+						<div class="bg-gradient-to-br from-chart-1/20 to-chart-1/10 border-chart-1/30 rounded-xl border p-3 group-hover:scale-110 transition-transform">
+							<svg class="text-chart-1 h-7 w-7" fill="currentColor" viewBox="0 0 20 20">
 								<path
 									d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"
 								/>
 							</svg>
 						</div>
-						<h3 class="text-foreground ml-3 text-lg font-semibold">Modern Frontend</h3>
+						<span class="text-xs font-medium text-muted-foreground bg-muted rounded-full px-3 py-1">Latest Stack</span>
 					</div>
-					<p class="text-muted-foreground mt-4">
-						SvelteKit 5 with TypeScript, Tailwind CSS 4, and shadcn/ui components for a
-						blazing-fast, type-safe frontend.
+					<h3 class="text-foreground text-xl font-bold mb-3">Lightning-Fast Frontend</h3>
+					<p class="text-muted-foreground leading-relaxed">
+						Powered by SvelteKit 5 with TypeScript, Tailwind CSS 4, and shadcn/ui. Get 100/100 Lighthouse scores out of the box.
 					</p>
-					<div class="mt-4 flex flex-wrap gap-2">
+					<div class="mt-6 flex flex-wrap gap-2">
 						<span
-							class="bg-chart-1/10 border-chart-1/20 text-chart-1 rounded-full border px-3 py-1 text-xs font-medium"
+							class="bg-chart-1/10 border-chart-1/20 text-chart-1 rounded-full border px-3 py-1 text-xs font-semibold"
 							>SvelteKit 5</span
 						>
 						<span
-							class="bg-chart-2/10 border-chart-2/20 text-chart-2 rounded-full border px-3 py-1 text-xs font-medium"
+							class="bg-chart-2/10 border-chart-2/20 text-chart-2 rounded-full border px-3 py-1 text-xs font-semibold"
 							>TypeScript</span
 						>
 						<span
-							class="bg-chart-3/10 border-chart-3/20 text-chart-3 rounded-full border px-3 py-1 text-xs font-medium"
+							class="bg-chart-3/10 border-chart-3/20 text-chart-3 rounded-full border px-3 py-1 text-xs font-semibold"
 							>Tailwind CSS</span
 						>
 						<span
-							class="bg-chart-4/10 border-chart-4/20 text-chart-4 rounded-full border px-3 py-1 text-xs font-medium"
+							class="bg-chart-4/10 border-chart-4/20 text-chart-4 rounded-full border px-3 py-1 text-xs font-semibold"
 							>Shadcn/ui</span
 						>
 					</div>
@@ -356,17 +468,106 @@
 		</div>
 	</div>
 
+	<!-- Testimonials Section -->
+	<div class="bg-gradient-to-b from-background to-muted/30 px-4 py-24 sm:px-6 lg:px-8">
+		<div class="mx-auto max-w-7xl">
+			<div class="text-center mb-16">
+				<span class="text-primary font-semibold text-sm uppercase tracking-wider">Testimonials</span>
+				<h2 class="text-foreground text-4xl font-bold sm:text-5xl mt-2">
+					Loved by Developers Worldwide
+				</h2>
+				<p class="text-muted-foreground mt-6 text-xl max-w-3xl mx-auto">
+					Join thousands of developers who ship faster with our template
+				</p>
+			</div>
+
+			<div class="grid gap-8 lg:grid-cols-3">
+				<div class="bg-card border-border rounded-2xl border p-8 hover:shadow-xl transition-all">
+					<div class="flex gap-1 mb-4">
+						{#each Array(5) as _}
+							<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+								<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+							</svg>
+						{/each}
+					</div>
+					<p class="text-foreground mb-6 leading-relaxed">
+						"This template saved us 3 months of development time. We went from idea to production in just 2 weeks. The authentication and payment integrations work flawlessly."
+					</p>
+					<div class="flex items-center gap-4">
+						<div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60"></div>
+						<div>
+							<p class="font-semibold text-foreground">Sarah Chen</p>
+							<p class="text-sm text-muted-foreground">CTO at TechStartup</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="bg-card border-border rounded-2xl border p-8 hover:shadow-xl transition-all">
+					<div class="flex gap-1 mb-4">
+						{#each Array(5) as _}
+							<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+								<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+							</svg>
+						{/each}
+					</div>
+					<p class="text-foreground mb-6 leading-relaxed">
+						"The best fullstack template I've ever used. Everything just works out of the box. The AI integration is phenomenal and the deployment process is seamless."
+					</p>
+					<div class="flex items-center gap-4">
+						<div class="w-12 h-12 rounded-full bg-gradient-to-br from-chart-2 to-chart-2/60"></div>
+						<div>
+							<p class="font-semibold text-foreground">Michael Rodriguez</p>
+							<p class="text-sm text-muted-foreground">Senior Developer at Scale AI</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="bg-card border-border rounded-2xl border p-8 hover:shadow-xl transition-all">
+					<div class="flex gap-1 mb-4">
+						{#each Array(5) as _}
+							<svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+								<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+							</svg>
+						{/each}
+					</div>
+					<p class="text-foreground mb-6 leading-relaxed">
+						"We evaluated 15 different templates and this was by far the most complete. Production-ready from day one with enterprise features we actually need."
+					</p>
+					<div class="flex items-center gap-4">
+						<div class="w-12 h-12 rounded-full bg-gradient-to-br from-chart-3 to-chart-3/60"></div>
+						<div>
+							<p class="font-semibold text-foreground">Emily Watson</p>
+							<p class="text-sm text-muted-foreground">Founder at FinTech Pro</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Demo Section -->
-	<div id="demo" class="px-4 py-20 sm:px-6 lg:px-8">
+	<div id="demo" class="px-4 py-24 sm:px-6 lg:px-8">
 		<div class="mx-auto max-w-6xl">
 			<div class="mb-12 flex flex-col items-center gap-4 text-center">
-				<h2 class="text-foreground text-3xl font-bold sm:text-4xl">This is the Demo</h2>
-				<p class="text-muted-foreground mt-4 text-lg">
-					If you are reading this, you are using the demo. Sign up or log in to see it in action.
+				<span class="inline-flex items-center gap-2 text-sm font-medium text-primary bg-primary/10 rounded-full px-4 py-2 border border-primary/20">
+					<span class="relative flex h-2 w-2">
+						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+						<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+					</span>
+					Live Demo
+				</span>
+				<h2 class="text-foreground text-4xl font-bold sm:text-5xl">Experience the Power</h2>
+				<p class="text-muted-foreground mt-4 text-xl max-w-2xl">
+					This entire website is built with our template. Create an account to explore the dashboard and see all features in action.
 				</p>
 				<div class="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-					<Button size="xl" href="/auth/signup">Sign up</Button>
-					<Button size="xl" href="/auth/signin" variant={'outline'}>Log in</Button>
+					<Button size="xl" href="/auth/signup" class="group">
+						Start Free Trial
+						<svg class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
+						</svg>
+					</Button>
+					<Button size="xl" href="/auth/signin" variant={'outline'}>Sign In</Button>
 				</div>
 			</div>
 		</div>
@@ -551,5 +752,86 @@
 		:global(body) {
 			overflow-x: hidden;
 		}
+	}
+
+	/* Ticker tape animation */
+	.ticker-wrapper {
+		position: relative;
+		overflow: hidden;
+		height: 40px;
+		display: flex;
+		align-items: center;
+	}
+
+	.ticker-content {
+		display: flex;
+		animation: ticker 30s linear infinite;
+		white-space: nowrap;
+	}
+
+	@keyframes ticker {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-50%);
+		}
+	}
+
+	/* Logo carousel animation */
+	.logo-carousel-wrapper {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.logo-carousel {
+		animation: logo-scroll 40s linear infinite;
+		white-space: nowrap;
+	}
+
+	@keyframes logo-scroll {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-50%);
+		}
+	}
+
+	/* Fade in animations */
+	.animate-fade-in {
+		animation: fadeIn 0.8s ease-out;
+	}
+
+	.animate-fade-in-delay {
+		animation: fadeIn 0.8s ease-out 0.2s both;
+	}
+
+	.animate-fade-in-delay-2 {
+		animation: fadeIn 0.8s ease-out 0.4s both;
+	}
+
+	.animate-fade-in-delay-3 {
+		animation: fadeIn 0.8s ease-out 0.6s both;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Hover effects for logo carousel */
+	.logo-carousel img {
+		transition: all 0.3s ease;
+	}
+
+	.logo-carousel-wrapper:hover .logo-carousel {
+		animation-play-state: paused;
 	}
 </style>
