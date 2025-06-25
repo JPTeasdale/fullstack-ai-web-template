@@ -3,20 +3,61 @@
 	import { onMount } from 'svelte';
 
 	let mounted = false;
+
+	// Get current day of the week and random color
+	const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	const colors = ['Red', 'Blue', 'Green', 'Purple', 'Orange', 'Pink', 'Yellow', 'Teal', 'Coral', 'Indigo'];
+	
+	const now = new Date();
+	const currentDay = days[now.getDay()];
+	
+	// Use day of year to get a stable color for each day
+	const start = new Date(now.getFullYear(), 0, 0);
+	const diff = now.getTime() - start.getTime();
+	const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+	const randomColor = colors[dayOfYear % colors.length];
+
+	// Countdown timer
+	let countdown = '00:00:00';
+	let countdownInterval: number;
+
+	function updateCountdown() {
+		const now = new Date();
+		const midnight = new Date();
+		midnight.setHours(24, 0, 0, 0);
+		
+		const diff = midnight.getTime() - now.getTime();
+		
+		const hours = Math.floor(diff / (1000 * 60 * 60));
+		const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+		const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+		
+		countdown = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+	}
+
 	onMount(() => {
 		mounted = true;
+		updateCountdown();
+		countdownInterval = setInterval(updateCountdown, 1000);
+		
+		return () => {
+			clearInterval(countdownInterval);
+		};
 	});
 
 	// Ticker tape content
 	const tickerItems = [
-		'🚀 Over 10,000+ developers using our template',
-		'⚡ Deploy to production in under 5 minutes',
-		'💰 Save $50,000+ in development costs',
+		'🚀 Over 1+ developers using our template',
+		'⚡ Deploy to production in under 10 minutes',
+		'💸 100% cheaper than other templates',
+		'🏢 Multi-tenant Database Architecture',
+		'🤖 Full-stack LLM integration with OpenAI',
 		'🔒 Enterprise-grade security built-in',
-		'🌍 Global edge deployment with 99.9% uptime',
+		'🌍 Global edge deployment',
 		'🎯 Used by startups',
 		'📈 Scale from 0 to 1M users seamlessly',
-		'🛡️ SOC2 compliant infrastructure'
+		'🛡️ SOC2 compliant infrastructure',
+		'🎁 100% free template',
 	];
 
 	// Company logos for carousel
@@ -62,12 +103,43 @@
 	</div>
 
 	<!-- Announcement Bar -->
-	<div class="bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 border-b border-primary/30">
-		<div class="px-4 py-3 text-center">
-			<p class="text-sm font-medium text-foreground">
-				🎉 <span class="font-semibold">2025 Special:</span> Get 100% off this absolutely free template
-				<a href="#" class="ml-2 text-primary underline underline-offset-2">Claim Offer →</a>
-			</p>
+	<div class="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border-b border-primary/20 backdrop-blur-sm">
+		<div class="px-4 py-2.5">
+			<div class="flex items-center justify-center gap-2 sm:gap-4">
+				<span class="inline-flex items-center gap-1.5 animate-pulse">
+					<span class="text-lg">🎉</span>
+					<span class="text-sm font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+						{randomColor} {currentDay} Special
+					</span>
+				</span>
+				
+				<span class="hidden sm:inline text-muted-foreground/50">•</span>
+				
+				<span class="text-sm text-foreground font-medium">
+					100% off this free template
+				</span>
+				
+				<span class="hidden sm:inline text-muted-foreground/50">•</span>
+				
+				<div class="inline-flex items-center gap-1.5 bg-background/50 backdrop-blur-sm rounded-full px-2.5 py-1 border border-border/50">
+					<svg class="w-3.5 h-3.5 text-primary animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+						<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4l3 3a1 1 0 001.414-1.414L11 9.414V6z" clip-rule="evenodd" />
+					</svg>
+					<span class="text-xs font-mono font-semibold text-primary tabular-nums">
+						{countdown}
+					</span>
+				</div>
+				
+				<a 
+					href="https://github.com/jpteasdale/fullstack-ai-web-template" 
+					class="inline-flex items-center gap-1 bg-primary text-primary-foreground rounded-full px-3 py-1 text-xs font-semibold hover:bg-primary/90 transition-all hover:scale-105 active:scale-95"
+				>
+					<span>Claim Now</span>
+					<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width={3} d="M9 5l7 7-7 7" />
+					</svg>
+				</a>
+			</div>
 		</div>
 	</div>
 
@@ -177,37 +249,36 @@
 			<div class="mt-20 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 				<!-- Frontend -->
 				<div
-					class="bg-card border-border hover:border-primary/50 rounded-2xl border p-8 transition-all hover:shadow-xl hover:-translate-y-1 group"
+					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg flex flex-col"
 				>
-					<div class="flex items-center justify-between mb-6">
-						<div class="bg-gradient-to-br from-chart-1/20 to-chart-1/10 border-chart-1/30 rounded-xl border p-3 group-hover:scale-110 transition-transform">
-							<svg class="text-chart-1 h-7 w-7" fill="currentColor" viewBox="0 0 20 20">
+					<div class="flex items-center mb-4">
+						<div class="bg-chart-1/20 border-chart-1/30 rounded-lg border p-2">
+							<svg class="text-chart-1 h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
 								<path
 									d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"
 								/>
 							</svg>
 						</div>
-						<span class="text-xs font-medium text-muted-foreground bg-muted rounded-full px-3 py-1">Latest Stack</span>
+						<h3 class="text-foreground ml-3 text-lg font-semibold">Lightning-Fast Frontend</h3>
 					</div>
-					<h3 class="text-foreground text-xl font-bold mb-3">Lightning-Fast Frontend</h3>
-					<p class="text-muted-foreground leading-relaxed">
-						Powered by SvelteKit 5 with TypeScript, Tailwind CSS 4, and shadcn/ui. Get 100/100 Lighthouse scores out of the box.
+					<p class="text-muted-foreground mb-4 flex-grow">
+						Powered by SvelteKit 5 with TypeScript, Tailwind CSS 4, and shadcn/ui. 
 					</p>
-					<div class="mt-6 flex flex-wrap gap-2">
+					<div class="flex flex-wrap gap-2 mt-auto">
 						<span
-							class="bg-chart-1/10 border-chart-1/20 text-chart-1 rounded-full border px-3 py-1 text-xs font-semibold"
+							class="bg-chart-1/10 border-chart-1/20 text-chart-1 rounded-full border px-3 py-1 text-xs font-medium"
 							>SvelteKit 5</span
 						>
 						<span
-							class="bg-chart-2/10 border-chart-2/20 text-chart-2 rounded-full border px-3 py-1 text-xs font-semibold"
+							class="bg-chart-2/10 border-chart-2/20 text-chart-2 rounded-full border px-3 py-1 text-xs font-medium"
 							>TypeScript</span
 						>
 						<span
-							class="bg-chart-3/10 border-chart-3/20 text-chart-3 rounded-full border px-3 py-1 text-xs font-semibold"
+							class="bg-chart-3/10 border-chart-3/20 text-chart-3 rounded-full border px-3 py-1 text-xs font-medium"
 							>Tailwind CSS</span
 						>
 						<span
-							class="bg-chart-4/10 border-chart-4/20 text-chart-4 rounded-full border px-3 py-1 text-xs font-semibold"
+							class="bg-chart-4/10 border-chart-4/20 text-chart-4 rounded-full border px-3 py-1 text-xs font-medium"
 							>Shadcn/ui</span
 						>
 					</div>
@@ -215,9 +286,9 @@
 
 				<!-- Authentication & Database -->
 				<div
-					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg"
+					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg flex flex-col"
 				>
-					<div class="flex items-center">
+					<div class="flex items-center mb-4">
 						<div class="bg-primary/20 border-primary/30 rounded-lg border p-2">
 							<svg class="text-primary h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
 								<path
@@ -229,10 +300,10 @@
 						</div>
 						<h3 class="text-foreground ml-3 text-lg font-semibold">Authentication & Database</h3>
 					</div>
-					<p class="text-muted-foreground mt-4">
+					<p class="text-muted-foreground mb-4 flex-grow">
 						Supabase auth with PostgreSQL, custom email templates, and secure user management.
 					</p>
-					<div class="mt-4 flex flex-wrap gap-2">
+					<div class="flex flex-wrap gap-2 mt-auto">
 						<span
 							class="bg-chart-5/10 border-chart-5/20 text-chart-5 rounded-full border px-3 py-1 text-xs font-medium"
 							>Supabase</span
@@ -250,9 +321,9 @@
 
 				<!-- Scalable Infrastructure -->
 				<div
-					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg"
+					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg flex flex-col"
 				>
-					<div class="flex items-center">
+					<div class="flex items-center mb-4">
 						<div class="bg-chart-2/20 border-chart-2/30 rounded-lg border p-2">
 							<svg class="text-chart-2 h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
 								<path
@@ -262,10 +333,10 @@
 						</div>
 						<h3 class="text-foreground ml-3 text-lg font-semibold">Scalable Infrastructure</h3>
 					</div>
-					<p class="text-muted-foreground mt-4">
+					<p class="text-muted-foreground mb-4 flex-grow">
 						Hosted with Cloudflare Workers and Supabase; free to start and cheap to scale.
 					</p>
-					<div class="mt-4 flex flex-wrap gap-2">
+					<div class="flex flex-wrap gap-2 mt-auto">
 						<span
 							class="bg-chart-2/10 border-chart-2/20 text-chart-2 rounded-full border px-3 py-1 text-xs font-medium"
 							>Cloudflare</span
@@ -283,9 +354,9 @@
 
 				<!-- Security -->
 				<div
-					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg"
+					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg flex flex-col"
 				>
-					<div class="flex items-center">
+					<div class="flex items-center mb-4">
 						<div class="bg-chart-3/20 border-chart-3/30 rounded-lg border p-2">
 							<svg class="text-chart-3 h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
 								<path
@@ -297,10 +368,10 @@
 						</div>
 						<h3 class="text-foreground ml-3 text-lg font-semibold">Advanced Security</h3>
 					</div>
-					<p class="text-muted-foreground mt-4">
+					<p class="text-muted-foreground mb-4 flex-grow">
 						Postgres RLS, rate limiting, IP blocking, and secure secret management.
 					</p>
-					<div class="mt-4 flex flex-wrap gap-2">
+					<div class="flex flex-wrap gap-2 mt-auto">
 						<span
 							class="bg-chart-1/10 border-chart-1/20 text-chart-1 rounded-full border px-3 py-1 text-xs font-medium"
 							>Rate Limiting</span
@@ -318,9 +389,9 @@
 
 				<!-- Payments -->
 				<div
-					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg"
+					class="bg-card border-border hover:border-primary/50 rounded-xl border p-6 transition-all hover:shadow-lg flex flex-col"
 				>
-					<div class="flex items-center">
+					<div class="flex items-center mb-4">
 						<div class="bg-chart-5/20 border-chart-5/30 rounded-lg border p-2">
 							<svg class="text-chart-5 h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
 								<path
@@ -330,11 +401,10 @@
 						</div>
 						<h3 class="text-foreground ml-3 text-lg font-semibold">Payments & Billing</h3>
 					</div>
-					<p class="text-muted-foreground mt-4">
-						Stripe integration with webhooks, subscription management, and secure payment processing
-						built-in.
+					<p class="text-muted-foreground mb-4 flex-grow">
+						Stripe integration with webhooks, subscription management, and secure payment processing built-in.
 					</p>
-					<div class="mt-4 flex flex-wrap gap-2">
+					<div class="flex flex-wrap gap-2 mt-auto">
 						<span
 							class="bg-chart-4/10 border-chart-4/20 text-chart-4 rounded-full border px-3 py-1 text-xs font-medium"
 							>Stripe</span
@@ -620,78 +690,6 @@
 		</div>
 	</div>
 
-	<!-- Quick Start -->
-	<div class="px-4 py-20 sm:px-6 lg:px-8">
-		<div class="mx-auto max-w-4xl">
-			<div class="text-center">
-				<h2 class="text-foreground text-3xl font-bold sm:text-4xl">Get Started in Minutes</h2>
-				<p class="text-muted-foreground mt-4 text-lg">
-					Clone, configure, and deploy your fullstack application
-				</p>
-			</div>
-
-			<div class="bg-card border-border mt-12 rounded-xl border p-8 shadow-lg">
-				<div class="space-y-6">
-					<div class="flex items-start space-x-4">
-						<div class="flex-shrink-0">
-							<div
-								class="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold"
-							>
-								1
-							</div>
-						</div>
-						<div>
-							<h3 class="text-foreground text-lg font-semibold">Clone the Repository</h3>
-							<p class="text-muted-foreground mt-1">Get started with the template in seconds</p>
-							<div class="bg-muted border-border mt-3 rounded-lg border p-4">
-								<code class="text-chart-2 text-sm"
-									>git clone https://github.com/yourusername/fullstack-ai-web-template.git</code
-								>
-							</div>
-						</div>
-					</div>
-
-					<div class="flex items-start space-x-4">
-						<div class="flex-shrink-0">
-							<div
-								class="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold"
-							>
-								2
-							</div>
-						</div>
-						<div>
-							<h3 class="text-foreground text-lg font-semibold">Configure Environment</h3>
-							<p class="text-muted-foreground mt-1">
-								Set up your environment variables and secrets
-							</p>
-							<div class="bg-muted border-border mt-3 rounded-lg border p-4">
-								<code class="text-chart-2 text-sm">cp .env.example .env && npm install</code>
-							</div>
-						</div>
-					</div>
-
-					<div class="flex items-start space-x-4">
-						<div class="flex-shrink-0">
-							<div
-								class="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold"
-							>
-								3
-							</div>
-						</div>
-						<div>
-							<h3 class="text-foreground text-lg font-semibold">Deploy to Production</h3>
-							<p class="text-muted-foreground mt-1">
-								Automatic deployment with Terraform and GitHub Actions
-							</p>
-							<div class="bg-muted border-border mt-3 rounded-lg border p-4">
-								<code class="text-chart-2 text-sm">npm run terraform:deploy && git push</code>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
 
 	<!-- CTA Section -->
 	<div class="bg-accent/50 border-border border-y px-4 py-20 sm:px-6 lg:px-8">
