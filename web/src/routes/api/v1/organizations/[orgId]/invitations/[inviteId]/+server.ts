@@ -1,16 +1,21 @@
-import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import { cancelInvitation } from '$lib/models/invitations';
+import { createApiHandler, requireAuth } from '$lib/server/api/helpers';
+import { noContentResponse } from '$lib/server/api/response';
 
-export const DELETE: RequestHandler = async ({ locals: { supabase }, params }) => {
-	const { inviteId } = params;
+export const DELETE = createApiHandler(async (event) => {
+	const { orgId, inviteId } = event.params;
+	
+	await requireAuth(event);
 
-    const { data: invitation, error } = await supabase.from('invitations').delete().eq('id', inviteId);
-    console.log({invitation})
+	// Create org context - RLS will handle permission check
+	const ctx = {
+		...event.locals,
+		user: event.locals.user!,
+		organizationId: orgId!
+	};
 
-    if (error) {
-        return json({ error: error.message }, { status: 500 });
-    }
+	await cancelInvitation(ctx, inviteId!);
 
-	return json({ success: true, invitation });
-}; 
+	return noContentResponse();
+}); 
 

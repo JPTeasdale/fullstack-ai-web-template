@@ -27,8 +27,8 @@ declare global {
 			r2: R2Bucket;
 			rateLimit: (name: string) => Promise<{ allowed: boolean }>;
 			trace: {
-				distinctId: string;
-				orgId: string;
+				requestId: string;
+				organizationId?: string;
 			};
 		}
 

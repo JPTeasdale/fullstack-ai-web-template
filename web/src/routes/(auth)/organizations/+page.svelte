@@ -120,7 +120,7 @@
 						type="text"
 						required
 						placeholder="Acme Inc."
-						value={form?.values?.name ?? ''}
+						value={(form?.values as any)?.name ?? ''}
 						class="mt-1"
 					/>
 				</div>
@@ -131,7 +131,7 @@
 						id="description"
 						name="description"
 						placeholder="What does your organization do?"
-						value={form?.values?.description ?? ''}
+						value={(form?.values as any)?.description ?? ''}
 						rows={3}
 						class="mt-1"
 					/>

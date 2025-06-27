@@ -26,7 +26,7 @@
 						{@const annotations = content.annotations || []}
 						{@html marked(content.text || '')}
 						{#if !content.done}<span class="dot"></span>{/if}
-						<MessageAnnotations {annotations} />
+						<MessageAnno {annotations} />
 					{:else if content.type === 'refusal'}
 						<div class="bg-destructive text-destructive-foreground w-full rounded-lg p-2 px-4">
 							{@html marked(content.refusal || '')}

@@ -1,7 +1,9 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { errorStr } from '$lib/utils/error';
 import { URL_VERIFY_MAGIC_LINK } from '$lib/url';
+import { createValidatedActionHandler, actionSuccess } from '$lib/server/actions/helpers';
+import { z } from 'zod';
+import { OperationError } from '$lib/errors';
 
 export const load: PageServerLoad = async ({ locals: { session } }) => {
 	if (session) {
@@ -9,43 +11,22 @@ export const load: PageServerLoad = async ({ locals: { session } }) => {
 	}
 };
 
+const signupSchema = z.object({
+	email: z.string().email('Please enter a valid email address'),
+	password: z.string().min(6, 'Password must be at least 6 characters long'),
+	'confirm-password': z.string()
+}).refine((data) => data.password === data['confirm-password'], {
+	message: 'Passwords do not match',
+	path: ['confirm-password']
+});
+
 export const actions: Actions = {
-	signup: async ({ request, locals: { supabase }, url }) => {
-		const formData = await request.formData();
-		const email = formData.get('email') as string;
-		const password = formData.get('password') as string;
-		const confirmPassword = formData.get('confirm-password') as string;
+	signup: createValidatedActionHandler(
+		signupSchema,
+		async ({ body, ctx, url }) => {
+			const { email, password } = body;
+			const { supabase } = ctx;
 
-		// Basic validation
-		if (!email || !password || !confirmPassword) {
-			return fail(400, {
-				error: 'Email, password, and password confirmation are required',
-				email
-			});
-		}
-
-		if (!email.includes('@')) {
-			return fail(400, {
-				error: 'Please enter a valid email address',
-				email
-			});
-		}
-
-		if (password.length < 6) {
-			return fail(400, {
-				error: 'Password must be at least 6 characters long',
-				email
-			});
-		}
-
-		if (password !== confirmPassword) {
-			return fail(400, {
-				error: 'Passwords do not match',
-				email
-			});
-		}
-
-		try {
 			const { data, error } = await supabase.auth.signUp({
 				email,
 				password,
@@ -55,20 +36,15 @@ export const actions: Actions = {
 			});
 
 			if (error) {
-				return fail(400, {
-					error: errorStr(error),
-					email
-				});
+				throw new OperationError(error.message, 'auth.signup');
 			}
 
 			// If user already exists but is not confirmed, tell them to check email
 			if (data.user && !data.session) {
-				return {
-					success: true,
-					message:
-						'Please check your email and click the confirmation link to complete your registration.',
-					email
-				};
+				return actionSuccess(
+					{ email },
+					'Please check your email and click the confirmation link to complete your registration.'
+				);
 			}
 
 			// If signup was successful and user is immediately signed in
@@ -77,16 +53,10 @@ export const actions: Actions = {
 			}
 
 			// Default success message
-			return {
-				success: true,
-				message: 'Account created successfully! Please check your email to confirm your account.',
-				email
-			};
-		} catch (error) {
-			return fail(500, {
-				error: 'An unexpected error occurred. Please try again.',
-				email
-			});
+			return actionSuccess(
+				{ email },
+				'Account created successfully! Please check your email to confirm your account.'
+			);
 		}
-	}
+	)
 };

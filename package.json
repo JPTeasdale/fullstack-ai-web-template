@@ -31,6 +31,7 @@
     "yargs": "^18.0.0"
   },
   "dependencies": {
-    "@cloudflare/workers-types": "^4.20250619.0"
+    "@cloudflare/workers-types": "^4.20250619.0",
+    "zod": "^3.25.67"
   }
 }

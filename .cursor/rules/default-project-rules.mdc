@@ -3,16 +3,276 @@ description:
 globs: 
 alwaysApply: true
 ---
-
 # SvelteKit
 
-- Always use Svelte5 with rules.
+- Always use Svelte5 with runes.
 - Use `$props()` instead of `export let`.
-- Use `<button onclick={} />` instead of ``<button on:click={} />`
-- Use 
+- Use `<button onclick={} />` instead of `<button on:click={} />`
+- Use `$state()` for reactive state
 
 # Styling
 
 - Never use gradients. 
 - Always use tailwind classes instead of `<style>` blocks. 
 
+# Project Organization
+
+## Directory Structure
+
+- **Components**: `src/lib/components/*` - Reusable UI components
+- **Models**: `src/lib/models/*` - Business logic organized by domain
+- **Schemas**: `src/lib/schemas/*` - Zod validation schemas
+- **Services**: `src/lib/services/*` - External integrations (R2, OpenAI, etc.)
+- **API Helpers**: `src/lib/server/api/*` - API utilities and response helpers
+- **Middleware**: `src/lib/server/middleware/*` - Server middleware
+- **Errors**: `src/lib/errors/*` - Custom error classes
+
+## Model Layer
+
+### Context Pattern
+All models receive a context object as their first parameter:
+
+```typescript
+// Base context for all operations
+interface BaseContext {
+  supabase: SupabaseClient
+  openai: OpenAI
+  r2: R2Bucket
+  posthog?: PostHog
+}
+
+// For authenticated operations
+interface AuthenticatedContext extends BaseContext {
+  user: {
+    id: string
+    email: string
+  }
+}
+```
+
+Example model function:
+```typescript
+export const getOrganization = async (ctx: BaseContext, id: string) => {
+  const { data, error } = await ctx.supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) throw new NotFoundError('Organization');
+  return data;
+};
+```
+
+### RLS-First Approach
+- **No permission checks in TypeScript** - All authorization is handled by PostgreSQL Row Level Security
+- Models should only check if a user is authenticated, not their permissions
+- Trust the database to filter data based on RLS policies
+- If a query returns no data, it means the user doesn't have access
+
+# API Rules
+
+## Use API Helpers
+
+Always use the helper functions from `src/lib/server/api/helpers.ts`:
+
+```typescript
+// Basic handler with automatic error handling
+export const GET = createApiHandler(async ({ params, locals }) => {
+  const ctx = createBaseContext(locals);
+  const org = await getOrganization(ctx, params.orgId);
+  return successResponse(org);
+});
+
+// With validation
+export const POST = createValidatedApiHandler(
+  createOrganizationSchema,
+  async ({ params, locals, body }) => {
+    const ctx = createAuthenticatedContext(locals);
+    const org = await createOrganization(ctx, body);
+    return createdResponse(org);
+  }
+);
+```
+
+## Response Helpers
+
+Use standardized responses from `src/lib/server/api/response.ts`:
+- `successResponse(data)` - 200 OK
+- `createdResponse(data)` - 201 Created
+- `noContentResponse()` - 204 No Content
+- `fileResponse(body, headers)` - For file downloads
+- `streamResponse(stream, headers)` - For streaming responses
+
+## Error Handling
+
+Always use error classes from `src/lib/errors/*`:
+- `NotFoundError` - Resource not found
+- `ValidationError` - Input validation failed
+- `UnauthorizedError` - Not authenticated
+- `ForbiddenError` - Not authorized (rare, usually RLS handles this)
+- `OperationError` - Database or business logic errors
+- `ServiceUnavailableError` - External service failures
+- `RateLimitError` - Rate limiting
+- `ConflictError` - Resource conflicts
+- `PayloadTooLargeError` - File too large
+- `ConfigurationError` - Missing configuration
+
+Errors are automatically mapped to proper HTTP status codes by `throwApiError`.
+
+## Validation
+
+Use Zod schemas from `src/lib/schemas/*` for all input validation:
+```typescript
+// Define schema
+export const createOrganizationSchema = z.object({
+  name: z.string().min(1).max(100),
+  slug: z.string().regex(/^[a-z0-9-]+$/)
+});
+
+// Use in handler
+export const POST = createValidatedApiHandler(
+  createOrganizationSchema,
+  async ({ body }) => {
+    // body is typed and validated
+  }
+);
+```
+
+## File Handling
+
+For file operations, use the `FileUploadService`:
+```typescript
+const uploadService = new FileUploadService(ctx);
+const result = await uploadService.uploadFile(file, orgId);
+```
+
+## Rate Limiting
+
+Apply rate limiting using the helper:
+```typescript
+export const POST = createApiHandler(async ({ request, locals }) => {
+  await checkRateLimit(request, {
+    points: 10,
+    duration: 60,
+    blockDuration: 60
+  });
+  // ... rest of handler
+});
+```
+
+# Server Actions (Form Actions)
+
+## Use Action Helpers
+
+Always use the helper functions from `src/lib/server/actions/helpers.ts`:
+
+```typescript
+// Basic action
+export const actions = {
+  myAction: createActionHandler(async ({ request, locals, ctx }) => {
+    // ctx is locals cast to BaseContext
+    const data = await myModelFunction(ctx);
+    throw redirect(303, '/success');
+  })
+};
+
+// Authenticated action
+export const actions = {
+  myAction: createAuthenticatedActionHandler(async ({ ctx }) => {
+    // ctx includes user, throws if not authenticated
+    await updateUserProfile(ctx, data);
+    return actionSuccess({ updated: true });
+  })
+};
+
+// With validation
+const mySchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email()
+});
+
+export const actions = {
+  myAction: createValidatedActionHandler(
+    mySchema,
+    async ({ body, ctx }) => {
+      // body is validated and typed
+      await createThing(ctx, body);
+      throw redirect(303, '/things');
+    }
+  )
+};
+
+// Authenticated with validation
+export const actions = {
+  myAction: createAuthenticatedValidatedActionHandler(
+    mySchema,
+    async ({ body, ctx }) => {
+      // Both authenticated and validated
+      await createUserThing(ctx, body);
+      return actionSuccess({ created: true });
+    }
+  )
+};
+```
+
+## Action Responses
+
+- Use `throw redirect()` for navigation after successful actions
+- Use `return actionSuccess(data, message)` for success with data
+- Throw error classes for failures (automatically converted to `fail()`)
+- Form values are automatically preserved on errors
+
+## File Uploads in Actions
+
+```typescript
+export const actions = {
+  upload: createAuthenticatedActionHandler(async ({ ctx, rawFormData }) => {
+    const { fields, files } = await parseFormDataWithFiles(rawFormData);
+    
+    if (files.document) {
+      const result = await uploadFile(ctx, files.document);
+      return actionSuccess(result);
+    }
+  })
+};
+```
+
+## Best Practices for Actions
+
+1. **Use schemas for validation** - Define Zod schemas for all form inputs
+2. **Let errors bubble up** - The helpers handle error formatting
+3. **Keep actions thin** - Call model functions for business logic
+4. **Return success data** - Use `actionSuccess()` when staying on the same page
+5. **Preserve form values** - Automatically handled by helpers on errors
+
+# Best Practices
+
+1. **Keep API routes thin** - They should only:
+   - Create the appropriate context
+   - Call model functions
+   - Return standardized responses
+
+2. **Business logic in models** - All business logic belongs in `src/lib/models/*`
+
+3. **Parallel operations** - Use `Promise.all()` for concurrent operations:
+   ```typescript
+   const [org, members] = await Promise.all([
+     getOrganization(ctx, orgId),
+     getOrganizationMembers(ctx, orgId)
+   ]);
+   ```
+
+4. **Error context** - Provide context when throwing errors:
+   ```typescript
+   throw new OperationError(
+     'Failed to create organization',
+     'database.insert',
+     { orgId, errorCode: error.code }
+   );
+   ```
+
+5. **Logging** - Middleware automatically logs requests. Add additional logging for debugging:
+   ```typescript
+   console.error('[Organization] Creation failed:', error);
+   ```

@@ -1,7 +1,9 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { errorStr } from '$lib/utils/error';
 import { URL_DASHBOARD } from '$lib/url';
+import { createValidatedActionHandler } from '$lib/server/actions/helpers';
+import { z } from 'zod';
+import { OperationError } from '$lib/errors';
 
 export const load: PageServerLoad = async ({ locals: { session } }) => {
 	if (session) {
@@ -9,58 +11,35 @@ export const load: PageServerLoad = async ({ locals: { session } }) => {
 	}
 };
 
+const signinSchema = z.object({
+	email: z.string().email('Please enter a valid email address'),
+	password: z.string().min(1, 'Password is required')
+});
+
 export const actions: Actions = {
-	signin: async ({ request, locals: { supabase }, url }) => {
-		const formData = await request.formData();
-		const email = formData.get('email') as string;
-		const password = formData.get('password') as string;
+	signin: createValidatedActionHandler(
+		signinSchema,
+		async ({ body, ctx, url }) => {
+			const { email, password } = body;
+			const { supabase } = ctx;
 
-		// Basic validation
-		if (!email || !password) {
-			return fail(400, {
-				error: 'Email and password are required',
-				email
-			});
-		}
-
-		if (!email.includes('@')) {
-			return fail(400, {
-				error: 'Please enter a valid email address',
-				email
-			});
-		}
-
-		try {
 			const { data, error } = await supabase.auth.signInWithPassword({
 				email,
 				password
 			});
 
 			if (error) {
-				return fail(400, {
-					error: errorStr(error),
-					email
-				});
+				throw new OperationError(error.message, 'auth.signin');
 			}
 
 			if (!data.session) {
-				return fail(400, {
-					error: 'Failed to create session',
-					email
-				});
+				throw new OperationError('Failed to create session', 'auth.signin');
 			}
 
 			// Session is established successfully - cookies will be set by the Supabase client
-			// No need to verify again since we have valid session data from signInWithPassword
-		} catch (error) {
-			return fail(500, {
-				error: 'An unexpected error occurred. Please try again.',
-				email
-			});
+			// Redirect to the intended page or home
+			const redirectTo = url.searchParams.get('redirectTo') ?? URL_DASHBOARD;
+			throw redirect(303, redirectTo);
 		}
-
-		// Redirect to the intended page or home
-		const redirectTo = url.searchParams.get('redirectTo') ?? URL_DASHBOARD;
-		throw redirect(303, redirectTo);
-	}
+	)
 };
