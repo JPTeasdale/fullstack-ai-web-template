@@ -11,6 +11,7 @@ export async function parseStream(
 			const parsed = JSON.parse(chunk) as ResponseStreamEvent;
 			await onEvent(parsed);
 		} catch (error) {
+			console.error('Error parsing stream', error);
 			if (error instanceof Error) {
 				onError(error);
 			} else {
@@ -20,7 +21,8 @@ export async function parseStream(
 	}
 
 	if (!res.ok) {
-		return onError(new Error(res.statusText));
+		console.log('Error making request', res, await res.json());
+		return onError(new Error(await res.text()));
 	}
 
 	const reader = res.body?.getReader();
