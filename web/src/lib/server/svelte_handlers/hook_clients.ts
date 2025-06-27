@@ -88,6 +88,24 @@ export const r2: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+const RATE_LIMIT_CONFIG = {
+	free: {
+		capacity: 10,
+		refillAmount: 1,
+		refillFrequencyMs: 60 * 60 * 1000
+	},
+	basic: {
+		capacity: 100,
+		refillAmount: 10,
+		refillFrequencyMs: 60 * 60 * 1000
+	},
+	pro: {
+		capacity: 1000,
+		refillAmount: 100,
+		refillFrequencyMs: 60 * 60 * 1000
+	}
+};
+
 export const rateLimiter: Handle = async ({ event, resolve }) => {
 	const userId = event.locals.user?.id;
 	const platform = event.platform;
@@ -97,6 +115,7 @@ export const rateLimiter: Handle = async ({ event, resolve }) => {
 
 	const id = platform.env.RATE_LIMITER.idFromName(userId);
 	const limiter = platform.env.RATE_LIMITER.get(id);
+	limiter.setConfig(RATE_LIMIT_CONFIG['free']);
 
 	event.locals.rateLimit = (plan: string) => {
 		if (dev) {
