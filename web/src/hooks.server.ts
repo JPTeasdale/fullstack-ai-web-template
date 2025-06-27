@@ -8,24 +8,22 @@ import { getPosthog } from '$lib/server/clients/posthog';
 
 import type { HandleServerError } from '@sveltejs/kit';
 
-export const handleError: HandleServerError = async ({
-	error,
-	status,
-	event,
-	message
-}) => {
+export const handleError: HandleServerError = async ({ error, status, event, message }) => {
 	const requestId = (event.locals as any).requestId || 'unknown';
 	const userId = event.locals.user?.id;
-	
+
 	if (status !== 404) {
 		console.error(`[${requestId}] Server Error:`, {
 			status,
 			message,
-			error: error instanceof Error ? {
-				name: error.name,
-				message: error.message,
-				stack: error.stack
-			} : error,
+			error:
+				error instanceof Error
+					? {
+							name: error.name,
+							message: error.message,
+							stack: error.stack
+						}
+					: error,
 			path: event.url.pathname,
 			method: event.request.method,
 			userId
@@ -52,7 +50,7 @@ export const handle = sequence(
 	// createRequestLogger(),
 	// createPerformanceMonitor(),
 	// createApiLogger(),
-	
+
 	// Core functionality
 	hookSupabaseSession,
 	hookClients,

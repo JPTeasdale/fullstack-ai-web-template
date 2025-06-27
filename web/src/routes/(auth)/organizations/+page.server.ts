@@ -10,9 +10,9 @@ export const actions = {
 		createOrganizationSchema,
 		async ({ body, ctx }) => {
 			const org = await createOrganization(ctx, body);
-			
+
 			// Redirect to the new organization page
 			throw redirect(303, `${URL_ORGANIZATIONS}/${org.id}`);
 		}
 	)
-} satisfies Actions; 
+} satisfies Actions;

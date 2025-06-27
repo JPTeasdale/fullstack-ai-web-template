@@ -11,52 +11,51 @@ export const load: PageServerLoad = async ({ locals: { session } }) => {
 	}
 };
 
-const signupSchema = z.object({
-	email: z.string().email('Please enter a valid email address'),
-	password: z.string().min(6, 'Password must be at least 6 characters long'),
-	'confirm-password': z.string()
-}).refine((data) => data.password === data['confirm-password'], {
-	message: 'Passwords do not match',
-	path: ['confirm-password']
-});
+const signupSchema = z
+	.object({
+		email: z.string().email('Please enter a valid email address'),
+		password: z.string().min(6, 'Password must be at least 6 characters long'),
+		'confirm-password': z.string()
+	})
+	.refine((data) => data.password === data['confirm-password'], {
+		message: 'Passwords do not match',
+		path: ['confirm-password']
+	});
 
 export const actions: Actions = {
-	signup: createValidatedActionHandler(
-		signupSchema,
-		async ({ body, ctx, url }) => {
-			const { email, password } = body;
-			const { supabase } = ctx;
+	signup: createValidatedActionHandler(signupSchema, async ({ body, ctx, url }) => {
+		const { email, password } = body;
+		const { supabase } = ctx;
 
-			const { data, error } = await supabase.auth.signUp({
-				email,
-				password,
-				options: {
-					emailRedirectTo: `${url.origin}${URL_VERIFY_MAGIC_LINK}`
-				}
-			});
-
-			if (error) {
-				throw new OperationError(error.message, 'auth.signup');
+		const { data, error } = await supabase.auth.signUp({
+			email,
+			password,
+			options: {
+				emailRedirectTo: `${url.origin}${URL_VERIFY_MAGIC_LINK}`
 			}
+		});
 
-			// If user already exists but is not confirmed, tell them to check email
-			if (data.user && !data.session) {
-				return actionSuccess(
-					{ email },
-					'Please check your email and click the confirmation link to complete your registration.'
-				);
-			}
+		if (error) {
+			throw new OperationError(error.message, 'auth.signup');
+		}
 
-			// If signup was successful and user is immediately signed in
-			if (data.session) {
-				throw redirect(303, '/');
-			}
-
-			// Default success message
+		// If user already exists but is not confirmed, tell them to check email
+		if (data.user && !data.session) {
 			return actionSuccess(
 				{ email },
-				'Account created successfully! Please check your email to confirm your account.'
+				'Please check your email and click the confirmation link to complete your registration.'
 			);
 		}
-	)
+
+		// If signup was successful and user is immediately signed in
+		if (data.session) {
+			throw redirect(303, '/');
+		}
+
+		// Default success message
+		return actionSuccess(
+			{ email },
+			'Account created successfully! Please check your email to confirm your account.'
+		);
+	})
 };

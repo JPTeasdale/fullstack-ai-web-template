@@ -10,10 +10,7 @@ export type TransformFunction = (
 	chunk: OpenAiResponseStreamEvent
 ) => Promise<OpenAiResponseStreamEvent>;
 
-export function streamResponse(
-	stream: OpenAiResponseStream,
-	transforms?: TransformFunction[]
-) {
+export function streamResponse(stream: OpenAiResponseStream, transforms?: TransformFunction[]) {
 	const modifiedStream = new ReadableStream({
 		async start(controller) {
 			const encoder = new TextEncoder();

@@ -1,21 +1,21 @@
-import type { AppSupabaseClient } from "$lib/types/app.types";
+import type { AppSupabaseClient } from '$lib/types/app.types';
 import type OpenAI from 'openai';
 
 /**
  * Base context with essential services
  */
 export interface BaseContext {
-  supabase: AppSupabaseClient;
-  openai: OpenAI;
-  r2: R2Bucket;
+	supabase: AppSupabaseClient;
+	openai: OpenAI;
+	r2: R2Bucket;
 }
 
 /**
  * Context for authenticated requests
  */
 export interface AuthenticatedContext extends BaseContext {
-  supabaseAdmin: AppSupabaseClient;
-  user: { id: string; email?: string };
+	supabaseAdmin: AppSupabaseClient;
+	user: { id: string; email?: string };
 }
 
 /**
@@ -23,7 +23,5 @@ export interface AuthenticatedContext extends BaseContext {
  * RLS will handle permissions based on the user's membership
  */
 export interface OrgContext extends AuthenticatedContext {
-  organizationId: string;
+	organizationId: string;
 }
-
- 

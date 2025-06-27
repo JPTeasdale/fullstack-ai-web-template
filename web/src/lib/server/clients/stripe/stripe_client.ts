@@ -55,12 +55,9 @@ export async function fetchPriceId(client: Stripe, type: AppSubscriptionType) {
 }
 
 function mapStripeStatus(subscription: Stripe.Subscription): Enums<'subscription_status'> {
-	
 	const status = subscription.status as Stripe.Subscription.Status;
 	const paidUntil = getSubscriptionPaidUntil(subscription);
-	const willEnd = Boolean(
-		subscription.cancel_at_period_end && paidUntil > new Date()
-	);
+	const willEnd = Boolean(subscription.cancel_at_period_end && paidUntil > new Date());
 	if (willEnd) {
 		return 'will_expire';
 	}

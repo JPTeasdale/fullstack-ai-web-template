@@ -32,7 +32,12 @@
 	};
 
 	const { generating, conversation, sendMessage, conversationError } = new AiConversationStore({
-		handleAiFunctionCall: () => console.log
+		handleAiFunctionCall: async (e) => {
+			console.log('handleAiFunctionCall', e);
+			return {
+				result: 'Hello, world!'
+			};
+		}
 	});
 
 	const items = $derived($conversation);
@@ -83,7 +88,12 @@
 		/>
 	{/snippet}
 	{#snippet chat()}
-		<Chat onSendMessage={handleSendMessage} generating={$generating} {items} error={$conversationError} />
+		<Chat
+			onSendMessage={handleSendMessage}
+			generating={$generating}
+			{items}
+			error={$conversationError}
+		/>
 	{/snippet}
 	{@render children()}
 </FullLayout>

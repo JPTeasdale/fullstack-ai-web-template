@@ -59,6 +59,7 @@ Consistent API response helpers:
 Models focus purely on business logic without permission checks:
 
 ### Organizations (`/lib/models/organizations/`)
+
 - `getOrganization` - RLS filters to accessible orgs
 - `getUserOrganizations` - RLS returns only user's orgs
 - `createOrganization` - RLS via stored procedure
@@ -66,18 +67,21 @@ Models focus purely on business logic without permission checks:
 - `deleteOrganization` - RLS allows only owners
 
 ### Members (`/lib/models/members/`)
+
 - `getOrganizationMembers` - RLS filters by membership
 - `updateMemberRole` - RLS enforces role hierarchy
 - `removeMember` - RLS prevents unauthorized removal
 - `addMember` - RLS checks admin permissions
 
 ### Invitations (`/lib/models/invitations/`)
+
 - `getOrganizationInvitations` - RLS filters by org
 - `createInvitation` - RLS checks membership
 - `cancelInvitation` - RLS checks permissions
 - `acceptInvitation` - Handled by database function
 
 ### Files (`/lib/models/files/`)
+
 - `getOrganizationFile` - RLS checks file access
 - `createOrganizationFile` - RLS checks org membership
 - `deleteOrganizationFile` - RLS checks ownership/admin
@@ -87,12 +91,14 @@ Models focus purely on business logic without permission checks:
 Zod schemas for type-safe validation:
 
 ### Organizations (`/lib/schemas/organizations.ts`)
+
 - `createOrganizationSchema`
 - `updateOrganizationSchema`
 - `inviteMemberSchema`
 - `updateMemberRoleSchema`
 
 ### Files (`/lib/schemas/files.ts`)
+
 - `fileUploadSchema`
 - `fileMetadataSchema`
 - File type helpers and constants
@@ -121,17 +127,17 @@ All API routes follow a clean pattern without permission checks:
 ```typescript
 // Simple authentication check + business logic
 export const POST = createApiHandler(async (event) => {
-    await requireAuth(event);
-    
-    const ctx = {
-        ...event.locals,
-        user: event.locals.user!,
-        organizationId: event.params.orgId!
-    };
-    
-    // RLS handles all authorization
-    const result = await modelFunction(ctx, data);
-    return createdResponse(result);
+	await requireAuth(event);
+
+	const ctx = {
+		...event.locals,
+		user: event.locals.user!,
+		organizationId: event.params.orgId!
+	};
+
+	// RLS handles all authorization
+	const result = await modelFunction(ctx, data);
+	return createdResponse(result);
 });
 ```
 
@@ -151,8 +157,8 @@ The database enforces these policies (examples):
 
 ```sql
 -- Organizations: Users can only see orgs they're members of
-CREATE POLICY "Users can select organizations they belong to" 
-ON organizations FOR SELECT 
+CREATE POLICY "Users can select organizations they belong to"
+ON organizations FOR SELECT
 USING (is_organization_member(id));
 
 -- Members: Only admins/owners can update roles
@@ -200,48 +206,47 @@ Created parallel helpers for form actions:
 ### Example Refactoring
 
 Before:
+
 ```typescript
 export const actions = {
-  createOrg: async ({ request, locals }) => {
-    const formData = await request.formData();
-    const name = formData.get('name') as string;
-    
-    if (!name) {
-      return fail(400, { error: 'Name required', values: { name } });
-    }
-    
-    try {
-      const { data, error } = await locals.supabase.rpc('create_organization', {
-        org_name: name
-      });
-      
-      if (error) {
-        return fail(400, { error: error.message, values: { name } });
-      }
-      
-      throw redirect(303, `/orgs/${data}`);
-    } catch (err) {
-      return fail(500, { error: 'Server error', values: { name } });
-    }
-  }
-}
+	createOrg: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const name = formData.get('name') as string;
+
+		if (!name) {
+			return fail(400, { error: 'Name required', values: { name } });
+		}
+
+		try {
+			const { data, error } = await locals.supabase.rpc('create_organization', {
+				org_name: name
+			});
+
+			if (error) {
+				return fail(400, { error: error.message, values: { name } });
+			}
+
+			throw redirect(303, `/orgs/${data}`);
+		} catch (err) {
+			return fail(500, { error: 'Server error', values: { name } });
+		}
+	}
+};
 ```
 
 After:
+
 ```typescript
 const createOrgSchema = z.object({
-  name: z.string().min(1).max(100)
+	name: z.string().min(1).max(100)
 });
 
 export const actions = {
-  createOrg: createAuthenticatedValidatedActionHandler(
-    createOrgSchema,
-    async ({ body, ctx }) => {
-      const org = await createOrganization(ctx, body);
-      throw redirect(303, `/orgs/${org.id}`);
-    }
-  )
-}
+	createOrg: createAuthenticatedValidatedActionHandler(createOrgSchema, async ({ body, ctx }) => {
+		const org = await createOrganization(ctx, body);
+		throw redirect(303, `/orgs/${org.id}`);
+	})
+};
 ```
 
 ### Updated Files
@@ -250,4 +255,4 @@ export const actions = {
 - `/routes/auth/signin/+page.server.ts` - Sign in
 - `/routes/auth/signup/+page.server.ts` - Sign up
 
-The result is ~50% less boilerplate in form actions with consistent error handling and validation. 
+The result is ~50% less boilerplate in form actions with consistent error handling and validation.

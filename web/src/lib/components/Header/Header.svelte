@@ -16,10 +16,10 @@
 	} = $props();
 </script>
 
-<header class="fixed top-0 left-0 right-0 z-10 bg-background max-w-screen shadow sm:m-3 sm:rounded">
+<header class="bg-background fixed top-0 right-0 left-0 z-10 max-w-screen shadow sm:m-3 sm:rounded">
 	<div class="mx-auto flex h-16 items-center justify-between p-4">
 		<a
-			class="flex h-full items-center gap-2 truncate whitespace-nowrap text-xl font-semibold text-gray-900"
+			class="flex h-full items-center gap-2 truncate text-xl font-semibold whitespace-nowrap text-gray-900"
 			href="/"
 		>
 			<AppIcon class="h-10 w-10" />
@@ -32,7 +32,7 @@
 					<Button
 						type="button"
 						variant="ghost"
-						class="focus:ring-primary space-x-1 text-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
+						class="focus:ring-primary space-x-1 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
 						id="user-menu-button"
 						aria-haspopup="true"
 					>
@@ -80,6 +80,4 @@
 	</div>
 </header>
 
-<div class="min-h-18 sm:min-h-20 w-full invisible">
-test
-</div>
+<div class="invisible min-h-18 w-full sm:min-h-20">test</div>

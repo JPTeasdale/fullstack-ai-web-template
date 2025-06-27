@@ -23,7 +23,7 @@
 		<Icon class="h-5 w-5 min-w-5" />
 	</div>
 	<span
-		class="ml-3 transition-opacity delay-100 ease-in-out whitespace-nowrap truncate"
+		class="ml-3 truncate whitespace-nowrap transition-opacity delay-100 ease-in-out"
 		class:shrink={isExpanded}
 		style={!isExpanded ? 'opacity: 0;' : 'opacity: 1;'}>{label}</span
 	>

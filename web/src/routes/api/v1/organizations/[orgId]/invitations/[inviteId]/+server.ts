@@ -4,7 +4,7 @@ import { noContentResponse } from '$lib/server/api/response';
 
 export const DELETE = createApiHandler(async (event) => {
 	const { orgId, inviteId } = event.params;
-	
+
 	await requireAuth(event);
 
 	// Create org context - RLS will handle permission check
@@ -17,5 +17,4 @@ export const DELETE = createApiHandler(async (event) => {
 	await cancelInvitation(ctx, inviteId!);
 
 	return noContentResponse();
-}); 
-
+});

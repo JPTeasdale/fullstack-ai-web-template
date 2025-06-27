@@ -201,15 +201,17 @@
 
 	<div class="flex w-full flex-col items-center">
 		<div class="flex w-full max-w-xl flex-col justify-center">
-			<div class="w-full relative">
-			{#if props.error}
-				<div class="absolute bottom-0 left-0 right-0 p-4" transition:slide={{ duration: 200 }}>
-					<div class="text-sm border border-red-500 text-center bg-red-100 text-red-500 rounded-sm " >
-						{props.error}
+			<div class="relative w-full">
+				{#if props.error}
+					<div class="absolute right-0 bottom-0 left-0 p-4" transition:slide={{ duration: 200 }}>
+						<div
+							class="rounded-sm border border-red-500 bg-red-100 text-center text-sm text-red-500"
+						>
+							{props.error}
+						</div>
 					</div>
-				</div>
-			{/if}
-			{@render props.slotAboveInput?.()}
+				{/if}
+				{@render props.slotAboveInput?.()}
 			</div>
 
 			<!-- Input area -->

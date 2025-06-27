@@ -4,10 +4,10 @@ import { createdResponse } from '$lib/server/api/response';
 
 export const POST = createApiHandler(async (event) => {
 	const { orgId } = event.params;
-	
+
 	// Just ensure user is authenticated
 	await requireAuth(event);
-	
+
 	// Parse file from FormData
 	const file = await parseFileUpload(event.request);
 

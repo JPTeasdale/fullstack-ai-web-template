@@ -10,7 +10,7 @@
 	const { data, form } = $props();
 	const organizations = $derived(data.organizations ?? []);
 	const profile = $derived(data.profile);
-	
+
 	let showCreateDialog = $state(false);
 	let isCreating = $state(false);
 </script>
@@ -35,11 +35,13 @@
 				{#each organizations as organization}
 					<a
 						href={`${URL_ORGANIZATIONS}/${organization.id}`}
-						class="group relative flex items-center rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm transition-all hover:border-primary hover:shadow-md"
+						class="group hover:border-primary relative flex items-center rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm transition-all hover:shadow-md"
 					>
 						<div class="flex items-center space-x-3">
-							<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 group-hover:bg-primary/10">
-								<Building2 class="h-5 w-5 text-gray-600 group-hover:text-primary" />
+							<div
+								class="group-hover:bg-primary/10 flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100"
+							>
+								<Building2 class="group-hover:text-primary h-5 w-5 text-gray-600" />
 							</div>
 							<div>
 								<h3 class="text-sm font-medium text-gray-900">{organization.name}</h3>
@@ -58,10 +60,7 @@
 				</div>
 			{/if}
 
-			<Button
-				class="w-full"
-				onclick={() => (showCreateDialog = true)}
-			>
+			<Button class="w-full" onclick={() => (showCreateDialog = true)}>
 				<Plus class="mr-2 h-4 w-4" />
 				New Organization
 			</Button>
@@ -146,9 +145,7 @@
 					>
 						Cancel
 					</Button>
-					<Button type="submit" loading={isCreating}>
-						Create Organization
-					</Button>
+					<Button type="submit" loading={isCreating}>Create Organization</Button>
 				</div>
 			</form>
 		</div>

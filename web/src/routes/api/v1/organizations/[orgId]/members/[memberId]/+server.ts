@@ -3,40 +3,37 @@ import { createValidatedApiHandler, createApiHandler, requireAuth } from '$lib/s
 import { successResponse, noContentResponse } from '$lib/server/api/response';
 import { updateMemberRoleSchema } from '$lib/schemas/organizations';
 
-export const PATCH = createValidatedApiHandler(
-    updateMemberRoleSchema,
-    async (event) => {
-        const { orgId, memberId } = event.params;
-        const { role } = event.validated;
-        
-        await requireAuth(event);
+export const PATCH = createValidatedApiHandler(updateMemberRoleSchema, async (event) => {
+	const { orgId, memberId } = event.params;
+	const { role } = event.validated;
 
-        // Create org context - RLS will handle permission check
-        const ctx = {
-            ...event.locals,
-            user: event.locals.user!,
-            organizationId: orgId!
-        };
+	await requireAuth(event);
 
-        await updateMemberRole(ctx, memberId!, role);
+	// Create org context - RLS will handle permission check
+	const ctx = {
+		...event.locals,
+		user: event.locals.user!,
+		organizationId: orgId!
+	};
 
-        return successResponse({ success: true });
-    }
-);
+	await updateMemberRole(ctx, memberId!, role);
+
+	return successResponse({ success: true });
+});
 
 export const DELETE = createApiHandler(async (event) => {
-    const { orgId, memberId } = event.params;
-    
-    await requireAuth(event);
+	const { orgId, memberId } = event.params;
 
-    // Create org context - RLS will handle permission check
-    const ctx = {
-        ...event.locals,
-        user: event.locals.user!,
-        organizationId: orgId!
-    };
+	await requireAuth(event);
 
-    await removeMember(ctx, memberId!);
+	// Create org context - RLS will handle permission check
+	const ctx = {
+		...event.locals,
+		user: event.locals.user!,
+		organizationId: orgId!
+	};
 
-    return noContentResponse();
-}); 
+	await removeMember(ctx, memberId!);
+
+	return noContentResponse();
+});

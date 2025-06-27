@@ -167,7 +167,7 @@
 					{#if data.subscription.cancel_at_period_end}
 						<div class="col-span-full">
 							<div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-								<div class="flex flex-row justify-between items-center text-sm text-yellow-800">
+								<div class="flex flex-row items-center justify-between text-sm text-yellow-800">
 									<div>
 										Your subscription will end on {formatDate(data.subscription.current_period_end)}
 									</div>
@@ -340,7 +340,7 @@
 				{#each Object.entries(plans) as [key, plan]}
 					<!-- Pro Plan Card -->
 					<div
-						class="bg-card w-sm relative max-w-sm cursor-pointer rounded-lg border p-6 transition-all hover:shadow-lg"
+						class="bg-card relative w-sm max-w-sm cursor-pointer rounded-lg border p-6 transition-all hover:shadow-lg"
 						onclick={() => openPlanDialog(key as 'basic' | 'pro')}
 					>
 						{#if plan.popular}
@@ -363,7 +363,7 @@
 							{#each plan.features as feature}
 								<li class="flex items-start">
 									<svg
-										class="text-primary mr-3 mt-0.5 h-5 w-5 flex-shrink-0"
+										class="text-primary mt-0.5 mr-3 h-5 w-5 flex-shrink-0"
 										fill="none"
 										stroke="currentColor"
 										viewBox="0 0 24 24"

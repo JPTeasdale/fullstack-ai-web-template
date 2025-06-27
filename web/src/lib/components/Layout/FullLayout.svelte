@@ -20,9 +20,7 @@
 </script>
 
 <div class="flex h-screen grow">
-	<div
-		class="max-w-screen flex h-screen max-h-screen min-h-screen flex-1 flex-col bg-gray-50"
-	>
+	<div class="flex h-screen max-h-screen min-h-screen max-w-screen flex-1 flex-col bg-gray-50">
 		{#if header}
 			{@render header()}
 		{/if}
@@ -34,15 +32,13 @@
 				{@render children()}
 			</main>
 			{#if chat}
-				<div class="flex-0 z-50 hidden w-full shadow-lg sm:block">
+				<div class="z-50 hidden w-full flex-0 shadow-lg sm:block">
 					<AiWindow>
 						{@render chat()}
 					</AiWindow>
 				</div>
 				{#if isChatOpen}
-					<div
-						class="fixed bottom-0 left-0 right-0 top-18 w-screen bg-white pb-10 sm:hidden"
-					>
+					<div class="fixed top-18 right-0 bottom-0 left-0 w-screen bg-white pb-10 sm:hidden">
 						{@render chat()}
 					</div>
 				{/if}
@@ -50,7 +46,7 @@
 		</div>
 		{#if chat}
 			<div
-				class="flex-0 bg-card fixed bottom-0 left-0 right-0 z-50 flex h-10 w-full shadow-lg sm:hidden"
+				class="bg-card fixed right-0 bottom-0 left-0 z-50 flex h-10 w-full flex-0 shadow-lg sm:hidden"
 			>
 				<Button variant="ghost" class="flex-1 rounded-none" onclick={() => (isChatOpen = false)}>
 					<LayoutDashboard class="h-4 w-4" />

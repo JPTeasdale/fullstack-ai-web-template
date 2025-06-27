@@ -70,7 +70,7 @@
 	class:duration-250={isCollapsed || !isResizing}
 >
 	<div
-		class="top-22 fixed bottom-0 right-0 z-10"
+		class="fixed top-22 right-0 bottom-0 z-10"
 		role="separator"
 		aria-orientation="horizontal"
 		tabindex="-1"
@@ -99,7 +99,7 @@
 	</div>
 	{#if !isCollapsed}
 		<div
-			class="top-22 fixed bottom-0 right-0 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
+			class="fixed top-22 right-0 bottom-0 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
 			style:width={isCollapsed ? '0' : sidebarWidth + 'px'}
 			style:min-width={isCollapsed ? '0' : sidebarWidth + 'px'}
 			style:max-width={isCollapsed ? '0' : sidebarWidth + 'px'}

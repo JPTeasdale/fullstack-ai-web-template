@@ -6,7 +6,7 @@ import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
 
 export const GET = createApiHandler(async (event) => {
 	const { orgId } = event.params;
-	
+
 	await requireAuth(event);
 
 	// Create org context
@@ -21,32 +21,28 @@ export const GET = createApiHandler(async (event) => {
 	return successResponse(invitations);
 });
 
-export const POST = createValidatedApiHandler(
-	inviteMemberSchema,
-	async (event) => {
-		const { orgId } = event.params;
-		const data = event.validated;
-		
-		await requireAuth(event);
+export const POST = createValidatedApiHandler(inviteMemberSchema, async (event) => {
+	const { orgId } = event.params;
+	const data = event.validated;
 
-		// Create org context - RLS will handle permission check
-		const ctx = {
-			...event.locals,
-			user: event.locals.user!,
-			organizationId: orgId!
-		};
+	await requireAuth(event);
 
-		const { invitation, organization } = await createInvitation(ctx, data);
+	// Create org context - RLS will handle permission check
+	const ctx = {
+		...event.locals,
+		user: event.locals.user!,
+		organizationId: orgId!
+	};
 
-		// Send email (non-blocking)
-		getInviteToOrgTemplate({
-			inviteLink: `${event.url.origin}/invitations`,
-			orgName: organization.name,
-			email: data.email,
-			inviterName: event.locals.user?.email || '',
-		});
+	const { invitation, organization } = await createInvitation(ctx, data);
 
-		return createdResponse({ success: true, invitation });
-	}
-); 
+	// Send email (non-blocking)
+	getInviteToOrgTemplate({
+		inviteLink: `${event.url.origin}/invitations`,
+		orgName: organization.name,
+		email: data.email,
+		inviterName: event.locals.user?.email || ''
+	});
 
+	return createdResponse({ success: true, invitation });
+});

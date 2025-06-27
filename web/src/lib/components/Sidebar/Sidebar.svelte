@@ -21,7 +21,7 @@
 ></div>
 
 <div
-	class={`transition-width fixed bottom-0 left-0 top-0 flex h-screen flex-col border-r border-gray-200 bg-white pt-20 duration-300 ease-in-out ${
+	class={`transition-width fixed top-0 bottom-0 left-0 flex h-screen flex-col border-r border-gray-200 bg-white pt-20 duration-300 ease-in-out ${
 		isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH
 	}`}
 >
@@ -31,7 +31,7 @@
 		</ul>
 	</nav>
 
-	<div class="flex-0 flex flex-col items-end justify-center border-t border-gray-200">
+	<div class="flex flex-0 flex-col items-end justify-center border-t border-gray-200">
 		<Button onclick={toggleSidebar} variant="ghost" class="m-2 shrink-0">
 			<ChevronLeft
 				class="animate-transform h-5 w-5 duration-300"

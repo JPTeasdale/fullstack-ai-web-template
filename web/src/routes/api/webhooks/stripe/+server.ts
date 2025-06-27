@@ -1,6 +1,10 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { convertStripeSubscription, getStripe, getSubscriptionMetadata } from '$lib/server/clients/stripe/stripe_client';
+import {
+	convertStripeSubscription,
+	getStripe,
+	getSubscriptionMetadata
+} from '$lib/server/clients/stripe/stripe_client';
 import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
 import type Stripe from 'stripe';
 import type { Enums } from '$lib/types/generated/supabase.types';
@@ -103,9 +107,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				}
 
 				// Retrieve the subscription details
-				const subscription = await stripe.subscriptions.retrieve(
-					session.subscription as string
-				);
+				const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 				const metadata = getSubscriptionMetadata(subscription);
 
 				await supabaseAdmin
@@ -127,9 +129,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					break;
 				}
 
-				await supabaseAdmin.from('subscriptions').upsert(
-					convertStripeSubscription(subscription)
-				);
+				await supabaseAdmin.from('subscriptions').upsert(convertStripeSubscription(subscription));
 
 				console.log(
 					`${event.type === 'customer.subscription.created' ? 'Created' : 'Updated'} subscription for user ${userId}`
@@ -166,9 +166,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 				await supabaseAdmin
 					.from('subscriptions')
-					.update(
-						convertStripeSubscription(subscription)
-					)
+					.update(convertStripeSubscription(subscription))
 					.eq('stripe_subscription_id', subscription.id);
 
 				console.log(`Updated subscription ${subscription.id} after successful payment`);

@@ -17,29 +17,26 @@ const signinSchema = z.object({
 });
 
 export const actions: Actions = {
-	signin: createValidatedActionHandler(
-		signinSchema,
-		async ({ body, ctx, url }) => {
-			const { email, password } = body;
-			const { supabase } = ctx;
+	signin: createValidatedActionHandler(signinSchema, async ({ body, ctx, url }) => {
+		const { email, password } = body;
+		const { supabase } = ctx;
 
-			const { data, error } = await supabase.auth.signInWithPassword({
-				email,
-				password
-			});
+		const { data, error } = await supabase.auth.signInWithPassword({
+			email,
+			password
+		});
 
-			if (error) {
-				throw new OperationError(error.message, 'auth.signin');
-			}
-
-			if (!data.session) {
-				throw new OperationError('Failed to create session', 'auth.signin');
-			}
-
-			// Session is established successfully - cookies will be set by the Supabase client
-			// Redirect to the intended page or home
-			const redirectTo = url.searchParams.get('redirectTo') ?? URL_DASHBOARD;
-			throw redirect(303, redirectTo);
+		if (error) {
+			throw new OperationError(error.message, 'auth.signin');
 		}
-	)
+
+		if (!data.session) {
+			throw new OperationError('Failed to create session', 'auth.signin');
+		}
+
+		// Session is established successfully - cookies will be set by the Supabase client
+		// Redirect to the intended page or home
+		const redirectTo = url.searchParams.get('redirectTo') ?? URL_DASHBOARD;
+		throw redirect(303, redirectTo);
+	})
 };

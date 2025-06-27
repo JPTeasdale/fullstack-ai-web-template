@@ -159,7 +159,7 @@
 				class="pl-10"
 			/>
 			<svg
-				class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+				class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
@@ -205,23 +205,23 @@
 						<thead class="bg-gray-50">
 							<tr>
 								<th
-									class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+									class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
 								>
 									Member
 								</th>
 								<th
-									class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+									class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
 								>
 									Role
 								</th>
 								<th
-									class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+									class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
 								>
 									Joined
 								</th>
 								{#if data.canManageMembers}
 									<th
-										class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+										class="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase"
 									>
 										Actions
 									</th>
@@ -231,7 +231,7 @@
 						<tbody class="divide-y divide-gray-200 bg-white">
 							{#each filteredMembers as member}
 								<tr class="transition-colors hover:bg-gray-50">
-									<td class="whitespace-nowrap px-6 py-4">
+									<td class="px-6 py-4 whitespace-nowrap">
 										<div class="flex items-center">
 											<div class="h-10 w-10 flex-shrink-0">
 												{#if member.user_profiles.avatar_url}
@@ -264,7 +264,7 @@
 											</div>
 										</div>
 									</td>
-									<td class="whitespace-nowrap px-6 py-4">
+									<td class="px-6 py-4 whitespace-nowrap">
 										{#if data.canManageMembers && member.role !== 'owner'}
 											<Select
 												value={member.role}
@@ -291,11 +291,11 @@
 											</span>
 										{/if}
 									</td>
-									<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+									<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
 										{new Date(member.joined_at).toLocaleDateString()}
 									</td>
 									{#if data.canManageMembers}
-										<td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+										<td class="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
 											<Button
 												disabled={member.role === 'owner'}
 												onclick={() => removeMember(member.id)}
@@ -332,27 +332,27 @@
 							<thead class="bg-gray-50">
 								<tr>
 									<th
-										class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+										class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
 									>
 										Email
 									</th>
 									<th
-										class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+										class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
 									>
 										Role
 									</th>
 									<th
-										class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+										class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
 									>
 										Invited By
 									</th>
 									<th
-										class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+										class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
 									>
 										Sent At
 									</th>
 									<th
-										class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+										class="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase"
 									>
 										Actions
 									</th>
@@ -361,25 +361,25 @@
 							<tbody class="divide-y divide-gray-200 bg-white">
 								{#each data.invitations as invitation}
 									<tr class="transition-colors hover:bg-gray-50">
-										<td class="whitespace-nowrap px-6 py-4">
+										<td class="px-6 py-4 whitespace-nowrap">
 											<div class="text-sm font-medium text-gray-900">
 												{invitation.email}
 											</div>
 										</td>
-										<td class="whitespace-nowrap px-6 py-4">
+										<td class="px-6 py-4 whitespace-nowrap">
 											<span
 												class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getRoleBadgeColor(invitation.role)}`}
 											>
 												{invitation.role}
 											</span>
 										</td>
-										<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+										<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
 											{invitation.invited_by_email || 'Unknown'}
 										</td>
-										<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+										<td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
 											{new Date(invitation.created_at).toLocaleDateString()}
 										</td>
-										<td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+										<td class="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
 											<button
 												onclick={() => cancelInvitation(invitation.id)}
 												class="text-red-600 transition-colors hover:text-red-900"
@@ -419,8 +419,8 @@
 
 				<div class="space-y-4">
 					<div class="text-muted-foreground text-sm">
-						Invite a new member to the <strong>{data.organization?.name}</strong> organization.
-						They will recieve an email with a link to join.
+						Invite a new member to the <strong>{data.organization?.name}</strong> organization. They
+						will recieve an email with a link to join.
 					</div>
 					<div class="space-y-2">
 						<Label for="email">Email Address</Label>
