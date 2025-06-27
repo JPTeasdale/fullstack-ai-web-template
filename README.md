@@ -1,6 +1,230 @@
 # Fullstack AI Web Template
 
-A production-ready, enterprise-grade fullstack web application template built with modern technologies and best practices. Go from zero to deployed in minutes with authentication, payments, AI integration, and scalable infrastructure already configured.
+A complete web application template that includes everything you need to build and launch a modern website or web app. This template comes with user accounts, payments, AI features, and much more already built in!
+
+## 🎯 What You Get
+
+This template gives you a professional website with:
+- ✅ User accounts (sign up, login, password reset)
+- ✅ Payment processing (subscriptions and one-time payments)
+- ✅ AI chat features (like ChatGPT)
+- ✅ File uploads and storage
+- ✅ Email sending
+- ✅ Analytics and user tracking
+- ✅ Team/organization features
+- ✅ Security and spam protection
+
+## 🚀 Getting Started (No Technical Experience Required!)
+
+Don't worry if you've never built a website before! We've made this as simple as possible. You'll use an AI assistant (like ChatGPT) to help you through every step.
+
+### Step 1: Get Help from AI
+
+Copy the entire prompt below and paste it into [ChatGPT](https://chat.openai.com), [Claude](https://claude.ai), or any other AI assistant:
+
+---
+
+**COPY EVERYTHING BELOW THIS LINE:**
+
+```
+<system>
+You are a senior software engineer and mentor who is mentoring me through the process of getting my first full stack application up and running in Supabase with Cloudflare Pages. Do not answer everything all at once,
+walk me through one step at a time and wait for my confirmation before continuing.
+</system>
+
+I need help setting up a web application using https://github.com/jpteasdale/fullstack-ai-web-template from GitHub. I have little to no technical experience and need detailed, step-by-step guidance.
+
+
+Here's what I need to accomplish:
+
+1. **Initial Setup**
+   - Install required software on my computer (Node.js v22+, Docker Desktop, Git, direnv)
+   - Clone the template from GitHub
+   - Set up my development environment
+
+2. **Create Required Accounts and Collect Information**
+   
+   **Supabase Account** (Database & Authentication)
+   - Create a new project at supabase.com
+   - Collect these values:
+     - Project URL (found in: Settings > Configuration > Project URL)
+     - Anon Key (found in: Settings > Configuration > Project API keys > anon)
+     - Service Role Key (found in: Settings > Configuration > Project API keys > service_role) 
+     - Project ID (found in: Settings > General > Project ID)
+     - Database Password (the one you created when setting up the project)
+     - Region (shown in your project URL, like 'aws-0-us-east-1')
+   
+   **Cloudflare Account** (Website Hosting)
+   - Create account at cloudflare.com
+   - Create an API Token:
+     - Go to Profile > API Tokens > Create Token
+     - Use the "Edit Cloudflare Workers" template
+     - Save the API token (you can't see it again!)
+   
+   **Stripe Account** (Payment Processing)
+   - Create account at stripe.com
+   - Collect:
+     - Secret Key (found in: Developers > API keys > Secret key)
+     - After deployment, will need to create webhook:
+       - Endpoint URL: https://[your-domain]/api/webhooks/stripe
+       - Events to select: all events starting with "customer.subscription." and "checkout.session.completed"
+       - Save the webhook signing secret
+   
+   **PostHog Account** (Analytics)
+   - Create account at posthog.com
+   - Create a new project
+   - Collect: Project API Key (found in: Settings > Project API Key)
+   
+   **OpenAI Account** (AI Features)
+   - Create account at platform.openai.com
+   - Generate API key: API keys > Create new secret key
+   - Save the key (you can't see it again!)
+   
+   **AWS Account** (Email Sending)
+   - Create AWS account
+   - Set up SES (Simple Email Service):
+     - Choose a region (like us-east-1)
+     - Verify your email address or domain
+     - Create an IAM user with "AmazonSESFullAccess" policy
+     - Generate access keys for the IAM user
+     - Collect: Access Key ID and Secret Access Key
+
+3. **Configuration**
+   - Replace these placeholders throughout the codebase:
+     - `fullstack-ai-web-template` → your project name (use hyphens, no spaces)
+     - `template.johnteasdale.com` → your domain (without https://)
+     - `TODO_SUPABASE_PROJECT_ID` → your actual Supabase project ID
+   - Set up environment variables in .envrc file
+   - Initialize the project with provided scripts
+
+4. **Local Development**
+   - Start Supabase locally with Docker
+   - Run the website on your computer
+   - Test user registration, login, and basic features
+
+5. **Deployment**
+   - Deploy database schema to Supabase
+   - Deploy Durable Objects to Cloudflare
+   - Deploy website to Cloudflare Pages
+   - Configure custom domain
+   - Set up production environment variables
+   - Configure Supabase email webhook
+   - Test everything is working
+
+**My Current Situation:**
+- Operating System: [Tell the AI: Windows, Mac, or Linux]
+- Technical Experience: Beginner/None
+- Domain Name: [Tell the AI: Do you have one already, or need help getting one?]
+- Project Name: [Tell the AI: What do you want to call your website?]
+- GitHub Repository: [Tell the AI: The URL of your cloned repository]
+
+**Environment Variables I'll Need to Set:**
+For local development (.envrc file):
+- SUPABASE_ACCESS_TOKEN (for Supabase CLI)
+- SUPABASE_PROJECT_ID
+- SUPABASE_DB_PASSWORD
+- SUPABASE_REGION
+- SUPABASE_AUTH_HOOK_SECRET (you'll generate this)
+- CLOUDFLARE_API_TOKEN
+
+For production (in Cloudflare):
+- SUPABASE_URL
+- SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_KEY
+- STRIPE_SECRET_KEY
+- STRIPE_WEBHOOK_SECRET
+- POSTHOG_API_KEY
+- OPENAI_API_KEY
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_REGION
+- AWS_SES_FROM_EMAIL
+- SUPABASE_AUTH_HOOK_SECRET
+- R2_ACCESS_KEY_ID
+- R2_SECRET_ACCESS_KEY
+- R2_BUCKET_NAME
+
+Please provide:
+1. Very detailed, click-by-click instructions for each step
+2. Explanations of what each step does in simple terms
+3. What to do if something goes wrong
+4. How to verify each step worked correctly
+5. Exact commands I need to type (and explain what they do)
+
+Please start by helping me with the very first step and wait for me to confirm it's complete before moving to the next step.
+```
+
+**COPY EVERYTHING ABOVE THIS LINE**
+
+---
+
+### Step 2: Follow Along
+
+The AI will guide you through each step. Here's what to expect:
+
+1. **Software Installation** - The AI will help you install the necessary programs on your computer
+2. **Account Creation** - You'll create accounts with various services (all have free tiers to start)
+3. **Configuration** - The AI will help you connect everything together
+4. **Testing** - You'll run the website on your computer to make sure it works
+5. **Going Live** - The AI will help you put your website on the internet
+
+### Step 3: Customization
+
+Once your website is running, you can ask the AI to help you:
+- Change colors and styling
+- Add new pages
+- Modify features
+- Set up your payment plans
+- Customize emails
+- And much more!
+
+## 💡 Tips for Success
+
+1. **Take it slow** - There's no rush. Each step builds on the previous one.
+2. **Ask questions** - If the AI uses a term you don't understand, ask for clarification.
+3. **Copy/paste carefully** - Many steps involve copying and pasting commands or code. Be precise!
+4. **Save your progress** - Keep a document with all your account credentials and important information.
+
+## 🆘 Getting Help
+
+If you get stuck:
+1. Tell the AI exactly what error message you're seeing
+2. Share screenshots if possible
+3. Describe what you expected to happen vs. what actually happened
+
+## 💰 Costs
+
+Most services have free tiers that are perfect for getting started:
+- **Supabase**: Free for small projects
+- **Cloudflare**: Free website hosting
+- **Stripe**: Only charges when you make money
+- **PostHog**: Free for up to 1M events/month
+- **OpenAI**: Pay only for what you use
+- **AWS Email**: Very cheap (fractions of a cent per email)
+
+You can run everything for free or very cheaply while getting started!
+
+## 🎉 What's Next?
+
+After setup, you'll have:
+- A real website live on the internet
+- Users can create accounts and log in
+- You can accept payments
+- AI features are ready to use
+- Everything is secure and professional
+
+The beauty of this template is that all the hard technical work is already done. You just need to customize it for your specific needs!
+
+## 📝 Notes
+
+- This template is based on modern, professional web technologies
+- It's the same foundation used by many successful startups
+- You own all the code and can modify anything
+- No monthly fees to use the template itself
+
+---
+
+**Remember**: Every expert was once a beginner. Take it one step at a time, and you'll have your professional web application up and running before you know it! 🚀
 
 ## 🚀 What This Template Includes
 
