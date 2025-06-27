@@ -1,11 +1,7 @@
-/*
-Set up test schemas and extensions
-*/
+
 
 CREATE SCHEMA IF NOT EXISTS pgtle;
 CREATE SCHEMA IF NOT EXISTS extensions;
-
-create extension if not exists pgtap;
 create extension if not exists citext;
 
 /*---------------------
@@ -51,8 +47,6 @@ create extension "supabase-dbdev";
 perform dbdev.install('supabase-dbdev');
 drop extension if exists "supabase-dbdev";
 create extension "supabase-dbdev";
-
-perform dbdev.install('basejump-supabase_test_helpers');
 end;
 $$;
 

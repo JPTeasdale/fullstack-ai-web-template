@@ -1,15 +1,30 @@
-
-create extension if not exists "basejump-supabase_test_helpers";
-
-
 -- Drop the schema if it already exists to start fresh
+drop schema if exists tap cascade;
+create schema if not exists tap;
+
+grant usage on schema tap to anon, authenticated, service_role;
+alter default privileges in schema tap grant execute on functions to anon, authenticated, service_role;
+
+
 drop schema if exists app_tests cascade;
--- Create a dedicated schema for testing
 create schema if not exists app_tests;
 
 
 grant usage on schema app_tests to anon, authenticated, service_role;
 alter default privileges in schema app_tests grant execute on functions to anon, authenticated, service_role;
+
+create extension if not exists pgtap with schema tap;
+
+ALTER ROLE postgres
+  SET search_path TO tap, "$user", public, extensions;
+
+do $$
+begin
+    perform dbdev.install('basejump-supabase_test_helpers');
+    drop extension if exists "basejump-supabase_test_helpers";
+    create extension "basejump-supabase_test_helpers" with schema tap;
+end;
+$$;
 
 
 -- ///////////////////////////////////////////////////////////////////////
