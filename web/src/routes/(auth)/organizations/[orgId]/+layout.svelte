@@ -41,6 +41,7 @@
 	});
 
 	const items = $derived($conversation);
+	const error = $derived($conversationError);
 	const handleSendMessage = async (message: string) => {
 		await sendMessage(`/api/v1/organizations/${orgId}/handle-turn`, message);
 	};
@@ -92,7 +93,7 @@
 			onSendMessage={handleSendMessage}
 			generating={$generating}
 			{items}
-			error={$conversationError}
+			{error}
 		/>
 	{/snippet}
 	{@render children()}

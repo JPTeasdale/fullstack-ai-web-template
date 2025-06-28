@@ -65,6 +65,7 @@
 		"@posthog/ai": "^5.1.0",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.50.0",
+		"date-fns": "^4.1.0",
 		"html-to-text": "^9.0.5",
 		"install": "^0.13.0",
 		"marked": "^15.0.12",

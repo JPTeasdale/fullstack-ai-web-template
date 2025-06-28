@@ -1,8 +1,11 @@
 import { formatTodoList } from '$lib/ai/schemas/todo_example_schema';
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
-import type { RequestEvent } from './$types';
+import { aiRequestSchema } from '$lib/schemas/ai';
+import { checkUserRateLimit, createValidatedApiHandler } from '$lib/server/api/helpers';
 
-export async function POST(event: RequestEvent) {
+export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => {
+	await checkUserRateLimit(event, event.locals.user?.id);
+
 	return await handleLlmRequest(event, {
 		async getInitialSystemPrompt() {
 			return '';

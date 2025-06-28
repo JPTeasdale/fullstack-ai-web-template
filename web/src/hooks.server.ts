@@ -7,6 +7,7 @@ import { hookClients } from '$lib/server/svelte_handlers/hook_clients';
 import { getPosthog } from '$lib/server/clients/posthog';
 
 import type { HandleServerError } from '@sveltejs/kit';
+import { throwApiError } from '$lib/errors';
 
 export const handleError: HandleServerError = async ({ error, status, event, message }) => {
 	const requestId = (event.locals as any).requestId || 'unknown';
@@ -40,9 +41,7 @@ export const handleError: HandleServerError = async ({ error, status, event, mes
 		}
 	}
 
-	return {
-		message: status === 500 ? 'Internal server error' : message
-	};
+	throwApiError(error);
 };
 
 export const handle = sequence(

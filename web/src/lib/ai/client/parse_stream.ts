@@ -1,3 +1,4 @@
+import { errorStr } from '$lib/utils/error';
 import type { ResponseStreamEvent } from 'openai/resources/responses/responses.mjs';
 
 export async function parseStream(
@@ -11,18 +12,15 @@ export async function parseStream(
 			const parsed = JSON.parse(chunk) as ResponseStreamEvent;
 			await onEvent(parsed);
 		} catch (error) {
-			console.error('Error parsing stream', error);
-			if (error instanceof Error) {
-				onError(error);
-			} else {
-				onError(new Error(String(error)));
-			}
+			onError(new Error(errorStr(error)));
 		}
 	}
 
 	if (!res.ok) {
-		console.log('Error making request', res, await res.json());
-		return onError(new Error(await res.text()));
+		const error = await res.json();
+		console.log('Error parsing stream', { error, message: error?.message, errorStr: errorStr(error) });
+
+		return onError(new Error(error?.message || 'Unknown error'));
 	}
 
 	const reader = res.body?.getReader();

@@ -23,6 +23,16 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
+CREATE TYPE "public"."app_subscription_tier" AS ENUM (
+    'free',
+    'basic',
+    'pro'
+);
+
+
+ALTER TYPE "public"."app_subscription_tier" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."app_subscription_type" AS ENUM (
     'basic_weekly',
     'basic_monthly',
@@ -107,40 +117,47 @@ CREATE OR REPLACE FUNCTION "public"."accept_invitation"("invitation_token" "text
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-DECLARE
-    invitation_record RECORD;
-    user_email TEXT;
-BEGIN
-    -- Get current user email
-    SELECT email INTO user_email FROM auth.users WHERE id = auth.uid();
-    
-    -- Get invitation details
-    SELECT * INTO invitation_record 
-    FROM public.invitations 
-    WHERE token = invitation_token 
-    AND status = 'pending' 
+DECLARE invitation_record RECORD;
+user_email TEXT;
+BEGIN -- Get current user email
+SELECT email INTO user_email
+FROM auth.users
+WHERE id = auth.uid();
+SELECT * INTO invitation_record
+FROM public.invitations
+WHERE token = invitation_token
+    AND status = 'pending'
     AND expires_at > NOW()
     AND email = user_email;
-    
-    IF NOT FOUND THEN
-        RETURN FALSE;
-    END IF;
-    
-    -- Add user to organization
-    INSERT INTO public.organization_members (organization_id, user_id, role, invited_by)
-    VALUES (invitation_record.organization_id, auth.uid(), invitation_record.role, invitation_record.invited_by)
-    ON CONFLICT (organization_id, user_id) DO NOTHING;
-    
-    -- Update invitation status
-    UPDATE public.invitations 
-    SET status = 'accepted', accepted_at = NOW(), updated_at = NOW()
-    WHERE id = invitation_record.id;
-    
-    -- Log the action
-    INSERT INTO public.audit_logs (user_id, organization_id, action, resource_type, resource_id)
-    VALUES (auth.uid(), invitation_record.organization_id, 'invite_accepted', 'invitation', invitation_record.id);
-    
-    RETURN TRUE;
+IF NOT FOUND THEN RETURN FALSE;
+END IF;
+INSERT INTO public.organization_members (organization_id, user_id, role, invited_by)
+VALUES (
+        invitation_record.organization_id,
+        auth.uid(),
+        invitation_record.role,
+        invitation_record.invited_by
+    ) ON CONFLICT (organization_id, user_id) DO NOTHING;
+UPDATE public.invitations
+SET status = 'accepted',
+    accepted_at = NOW(),
+    updated_at = NOW()
+WHERE id = invitation_record.id;
+INSERT INTO public.audit_logs (
+        user_id,
+        organization_id,
+        action,
+        resource_type,
+        resource_id
+    )
+VALUES (
+        auth.uid(),
+        invitation_record.organization_id,
+        'invite_accepted',
+        'invitation',
+        invitation_record.id
+    );
+RETURN TRUE;
 END;
 $$;
 
@@ -152,46 +169,33 @@ CREATE OR REPLACE FUNCTION "public"."authorize_active_org"("organization_id" "uu
     LANGUAGE "plpgsql" STABLE
     SET "search_path" TO ''
     AS $$
-DECLARE
-    p_active_membership public.organization_members;
-    role_hierarchy INTEGER;
-    min_role_hierarchy INTEGER;
-BEGIN
-    -- Handle NULL organization_id - return FALSE immediately
-    IF organization_id IS NULL THEN
-        RETURN FALSE;
-    END IF;
-
-    SELECT * INTO p_active_membership FROM public.current_active_membership();
-
-    -- Check if organization matches user's active organization
-    -- If user has no active organization, return FALSE
-    IF p_active_membership IS NULL THEN
-        RETURN FALSE;
-    END IF;
-    
-    -- Check if the organization_id matches the active organization
-    IF organization_id <> p_active_membership.organization_id THEN
-        RETURN FALSE;
-    END IF;
-
-    -- Convert roles to hierarchy numbers (higher = more permissions)
-    role_hierarchy := CASE p_active_membership.role
-        WHEN 'owner' THEN 3
-        WHEN 'admin' THEN 2
-        WHEN 'member' THEN 1
-        ELSE 0
-    END;
-    
-    min_role_hierarchy := CASE minimum_role
-        WHEN 'owner' THEN 3
-        WHEN 'admin' THEN 2
-        WHEN 'member' THEN 1
-        ELSE 0
-    END;
-    
-    -- Return true if user has required role or higher
-    RETURN role_hierarchy >= min_role_hierarchy;
+DECLARE p_active_membership public.organization_members;
+role_hierarchy INTEGER;
+min_role_hierarchy INTEGER;
+BEGIN -- Handle NULL organization_id - return FALSE immediately
+IF organization_id IS NULL THEN RETURN FALSE;
+END IF;
+SELECT * INTO p_active_membership
+FROM public.current_active_membership();
+IF p_active_membership IS NULL THEN RETURN FALSE;
+END IF;
+IF organization_id <> p_active_membership.organization_id THEN RETURN FALSE;
+END IF;
+role_hierarchy := CASE
+    p_active_membership.role
+    WHEN 'owner' THEN 3
+    WHEN 'admin' THEN 2
+    WHEN 'member' THEN 1
+    ELSE 0
+END;
+min_role_hierarchy := CASE
+    minimum_role
+    WHEN 'owner' THEN 3
+    WHEN 'admin' THEN 2
+    WHEN 'member' THEN 1
+    ELSE 0
+END;
+RETURN role_hierarchy >= min_role_hierarchy;
 END;
 $$;
 
@@ -203,23 +207,28 @@ CREATE OR REPLACE FUNCTION "public"."create_organization_with_owner"("org_name" 
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-DECLARE
-    new_org_id UUID;
-BEGIN
-    -- Create the organization
-    INSERT INTO public.organizations (name, slug, description, created_by)
-    VALUES (org_name, org_slug, org_description, auth.uid())
-    RETURNING id INTO new_org_id;
-    
-    -- Add the creator as owner
-    INSERT INTO public.organization_members (organization_id, user_id, role, invited_by)
-    VALUES (new_org_id, auth.uid(), 'owner', auth.uid());
-    
-    -- Log the action
-    INSERT INTO public.audit_logs (user_id, organization_id, action, resource_type, resource_id)
-    VALUES (auth.uid(), new_org_id, 'create', 'organization', new_org_id);
-    
-    RETURN new_org_id;
+DECLARE new_org_id UUID;
+BEGIN -- Create the organization
+INSERT INTO public.organizations (name, slug, description, created_by)
+VALUES (org_name, org_slug, org_description, auth.uid())
+RETURNING id INTO new_org_id;
+INSERT INTO public.organization_members (organization_id, user_id, role, invited_by)
+VALUES (new_org_id, auth.uid(), 'owner', auth.uid());
+INSERT INTO public.audit_logs (
+        user_id,
+        organization_id,
+        action,
+        resource_type,
+        resource_id
+    )
+VALUES (
+        auth.uid(),
+        new_org_id,
+        'create',
+        'organization',
+        new_org_id
+    );
+RETURN new_org_id;
 END;
 $$;
 
@@ -249,30 +258,20 @@ CREATE OR REPLACE FUNCTION "public"."current_active_membership"() RETURNS "publi
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-DECLARE
-    org_id uuid;
-    result public.organization_members;
-    current_user_id uuid;
-BEGIN
-    -- Get current user ID
-    current_user_id := auth.uid();
-    
-    -- Get the current organization ID from session config
-    org_id := public.get_current_organization_id();
-    
-    -- If no organization is set, return NULL
-    IF org_id IS NULL THEN
-        RETURN NULL;
-    END IF;
-    
-    -- Get the organization member record
-    SELECT om.* INTO result
-    FROM public.organization_members om
-    WHERE om.organization_id = org_id
+DECLARE org_id uuid;
+result public.organization_members;
+current_user_id uuid;
+BEGIN -- Get current user ID
+current_user_id := auth.uid();
+org_id := public.get_current_organization_id();
+IF org_id IS NULL THEN RETURN NULL;
+END IF;
+SELECT om.* INTO result
+FROM public.organization_members om
+WHERE om.organization_id = org_id
     AND om.user_id = current_user_id
-    LIMIT 1;
-    
-    RETURN result;
+LIMIT 1;
+RETURN result;
 END;
 $$;
 
@@ -283,7 +282,7 @@ ALTER FUNCTION "public"."current_active_membership"() OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."current_active_organization_id"() RETURNS "uuid"
     LANGUAGE "sql" STABLE
     AS $$
-    SELECT (public.current_active_membership()).organization_id;
+SELECT (public.current_active_membership()).organization_id;
 $$;
 
 
@@ -292,11 +291,12 @@ ALTER FUNCTION "public"."current_active_organization_id"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_current_organization_id"() RETURNS "uuid"
     LANGUAGE "plpgsql" STABLE
-    AS $$
-BEGIN
-  -- current_setting returns NULL if not set (with second param true)
-  -- NULLIF converts empty string to NULL as well for safety
-  RETURN NULLIF(current_setting('app.current_organization_id', true), '')::uuid;
+    AS $$ BEGIN -- current_setting returns NULL if not set (with second param true)
+    -- NULLIF converts empty string to NULL as well for safety
+    RETURN NULLIF(
+        current_setting('app.current_organization_id', true),
+        ''
+    )::uuid;
 END;
 $$;
 
@@ -304,13 +304,26 @@ $$;
 ALTER FUNCTION "public"."get_current_organization_id"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."handle_updated_at"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
+CREATE OR REPLACE FUNCTION "public"."handle_organization_private_sync"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
-    NEW.updated_at = NOW();
+    INSERT INTO public.organization_private (organization_id)
+    VALUES (NEW.id);
     RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_organization_private_sync"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO ''
+    AS $$ BEGIN NEW.updated_at = NOW();
+RETURN NEW;
 END;
 $$;
 
@@ -321,34 +334,26 @@ ALTER FUNCTION "public"."handle_updated_at"() OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."handle_user_profile_sync"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
-    AS $$
-BEGIN
-    IF TG_OP = 'INSERT' THEN
-        -- Create profile when user is created
-        INSERT INTO public.user_profiles (user_id, email, full_name)
-        VALUES (
-            NEW.id,
-            NEW.email,
-            COALESCE(NEW.raw_user_meta_data->>'full_name', '')
-        );
-        INSERT INTO public.user_profiles_private (user_id)
-        VALUES (
-            NEW.id
-        );
-        RETURN NEW;
-    ELSIF TG_OP = 'UPDATE' THEN
-        -- Update email in profile when auth.users email changes
-        UPDATE public.user_profiles 
-        SET 
-            email = NEW.email,
-            updated_at = NOW()
-        WHERE user_id = NEW.id;
-        RETURN NEW;
-    ELSIF TG_OP = 'DELETE' THEN
-        -- Profile will be deleted via CASCADE foreign key constraint
-        RETURN OLD;
-    END IF;
-    RETURN NULL;
+    AS $$ BEGIN IF TG_OP = 'INSERT' THEN -- Create profile when user is created
+INSERT INTO public.user_profiles (user_id, email, full_name)
+VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', '')
+    );
+INSERT INTO public.user_private (user_id)
+VALUES (NEW.id);
+RETURN NEW;
+ELSIF TG_OP = 'UPDATE' THEN -- Update email in profile when auth.users email changes
+UPDATE public.user_profiles
+SET email = NEW.email,
+    updated_at = NOW()
+WHERE user_id = NEW.id;
+RETURN NEW;
+ELSIF TG_OP = 'DELETE' THEN -- Profile will be deleted via CASCADE foreign key constraint
+RETURN OLD;
+END IF;
+RETURN NULL;
 END;
 $$;
 
@@ -360,24 +365,17 @@ CREATE OR REPLACE FUNCTION "public"."is_organization_member"("org_id" "uuid") RE
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-DECLARE
-    current_user_id uuid;
-BEGIN
-    -- Get current user ID
-    current_user_id := auth.uid();
-    
-    -- Handle NULL organization_id - return FALSE immediately
-    IF org_id IS NULL THEN
-        RETURN FALSE;
-    END IF;
-
-    -- Return true if user has any role in the organization
-    RETURN EXISTS (
-        SELECT 1
-        FROM public.organization_members
-        WHERE organization_id = org_id
+DECLARE current_user_id uuid;
+BEGIN -- Get current user ID
+current_user_id := auth.uid();
+IF org_id IS NULL THEN RETURN FALSE;
+END IF;
+RETURN EXISTS (
+    SELECT 1
+    FROM public.organization_members
+    WHERE organization_id = org_id
         AND user_id = current_user_id
-    );
+);
 END;
 $$;
 
@@ -387,10 +385,12 @@ ALTER FUNCTION "public"."is_organization_member"("org_id" "uuid") OWNER TO "post
 
 CREATE OR REPLACE FUNCTION "public"."set_current_organization_id"("org_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
-    AS $$
-BEGIN
-  -- Convert NULL to empty string for storage, COALESCE handles NULL input
-  PERFORM set_config('app.current_organization_id', COALESCE(org_id::text, ''), false);
+    AS $$ BEGIN -- Convert NULL to empty string for storage, COALESCE handles NULL input
+    PERFORM set_config(
+        'app.current_organization_id',
+        COALESCE(org_id::text, ''),
+        false
+    );
 END;
 $$;
 
@@ -470,6 +470,19 @@ CREATE TABLE IF NOT EXISTS "public"."notifications" (
 ALTER TABLE "public"."notifications" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."organization_private" (
+    "organization_id" "uuid" NOT NULL,
+    "plan" "public"."app_subscription_tier" DEFAULT 'free'::"public"."app_subscription_tier" NOT NULL,
+    "call_tokens_remaining" integer DEFAULT 0 NOT NULL,
+    "call_tokens_last_refill" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."organization_private" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."organizations" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text" NOT NULL,
@@ -509,6 +522,21 @@ CREATE TABLE IF NOT EXISTS "public"."subscriptions" (
 ALTER TABLE "public"."subscriptions" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."user_private" (
+    "user_id" "uuid" NOT NULL,
+    "stripe_customer_id" "text",
+    "openai_vector_store_id" "text",
+    "plan" "public"."app_subscription_tier" DEFAULT 'free'::"public"."app_subscription_tier" NOT NULL,
+    "call_tokens_remaining" integer DEFAULT 0 NOT NULL,
+    "call_tokens_last_refill" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."user_private" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
     "user_id" "uuid" NOT NULL,
     "email" "text" NOT NULL,
@@ -522,18 +550,6 @@ CREATE TABLE IF NOT EXISTS "public"."user_profiles" (
 
 
 ALTER TABLE "public"."user_profiles" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."user_profiles_private" (
-    "user_id" "uuid" NOT NULL,
-    "stripe_customer_id" "text",
-    "openai_vector_store_id" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "public"."user_profiles_private" OWNER TO "postgres";
 
 
 ALTER TABLE ONLY "public"."audit_logs"
@@ -576,6 +592,11 @@ ALTER TABLE ONLY "public"."organization_members"
 
 
 
+ALTER TABLE ONLY "public"."organization_private"
+    ADD CONSTRAINT "organization_private_pkey" PRIMARY KEY ("organization_id");
+
+
+
 ALTER TABLE ONLY "public"."organizations"
     ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("id");
 
@@ -606,13 +627,13 @@ ALTER TABLE ONLY "public"."subscriptions"
 
 
 
+ALTER TABLE ONLY "public"."user_private"
+    ADD CONSTRAINT "user_private_pkey" PRIMARY KEY ("user_id");
+
+
+
 ALTER TABLE ONLY "public"."user_profiles"
     ADD CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("user_id");
-
-
-
-ALTER TABLE ONLY "public"."user_profiles_private"
-    ADD CONSTRAINT "user_profiles_private_pkey" PRIMARY KEY ("user_id");
 
 
 
@@ -736,6 +757,14 @@ CREATE OR REPLACE TRIGGER "invitations_updated_at" BEFORE UPDATE ON "public"."in
 
 
 
+CREATE OR REPLACE TRIGGER "on_organization_created" AFTER INSERT ON "public"."organizations" FOR EACH ROW EXECUTE FUNCTION "public"."handle_organization_private_sync"();
+
+
+
+CREATE OR REPLACE TRIGGER "organization_private_updated_at" BEFORE UPDATE ON "public"."organization_private" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+
+
+
 CREATE OR REPLACE TRIGGER "organizations_updated_at" BEFORE UPDATE ON "public"."organizations" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
 
 
@@ -744,7 +773,7 @@ CREATE OR REPLACE TRIGGER "subscriptions_updated_at" BEFORE UPDATE ON "public"."
 
 
 
-CREATE OR REPLACE TRIGGER "user_profiles_private_updated_at" BEFORE UPDATE ON "public"."user_profiles_private" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+CREATE OR REPLACE TRIGGER "user_private_updated_at" BEFORE UPDATE ON "public"."user_private" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
 
 
 
@@ -802,6 +831,11 @@ ALTER TABLE ONLY "public"."organization_members"
 
 
 
+ALTER TABLE ONLY "public"."organization_private"
+    ADD CONSTRAINT "organization_private_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."organizations"
     ADD CONSTRAINT "organizations_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."user_profiles"("user_id") ON DELETE SET NULL;
 
@@ -817,8 +851,8 @@ ALTER TABLE ONLY "public"."subscriptions"
 
 
 
-ALTER TABLE ONLY "public"."user_profiles_private"
-    ADD CONSTRAINT "user_profiles_private_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."user_private"
+    ADD CONSTRAINT "user_private_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
 
 
@@ -926,16 +960,19 @@ ALTER TABLE "public"."notifications" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."organization_members" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."organization_private" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."subscriptions" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."user_private" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."user_profiles" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."user_profiles_private" ENABLE ROW LEVEL SECURITY;
 
 
 GRANT USAGE ON SCHEMA "public" TO "postgres";
@@ -987,6 +1024,12 @@ GRANT ALL ON FUNCTION "public"."get_current_organization_id"() TO "service_role"
 
 
 
+GRANT ALL ON FUNCTION "public"."handle_organization_private_sync"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_organization_private_sync"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_organization_private_sync"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."handle_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_updated_at"() TO "service_role";
@@ -1035,6 +1078,10 @@ GRANT ALL ON TABLE "public"."notifications" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."organization_private" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."organizations" TO "anon";
 GRANT ALL ON TABLE "public"."organizations" TO "authenticated";
 GRANT ALL ON TABLE "public"."organizations" TO "service_role";
@@ -1047,13 +1094,13 @@ GRANT ALL ON TABLE "public"."subscriptions" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."user_private" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."user_profiles" TO "anon";
 GRANT ALL ON TABLE "public"."user_profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_profiles" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."user_profiles_private" TO "service_role";
 
 
 

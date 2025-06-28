@@ -34,19 +34,15 @@ export function throwApiError(err: unknown, fallbackMessage = 'Internal server e
 
 	if (err instanceof ValidationError) {
 		// Include field errors in the response if available
-		const message = err.fields
-			? JSON.stringify({ message: err.message, errors: err.fields })
-			: err.message;
-		throw svelteKitError(400, message);
+		throw svelteKitError(400, {
+			message: err.message
+		});
 	}
 
 	if (err instanceof RateLimitError) {
-		const message = JSON.stringify({
-			message: err.message,
-			limit: err.limit,
-			resetTime: err.resetTime?.toISOString()
+		throw svelteKitError(429, {
+			message: err.message
 		});
-		throw svelteKitError(429, message);
 	}
 
 	if (err instanceof ConflictError) {

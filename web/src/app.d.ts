@@ -25,7 +25,6 @@ declare global {
 			openai: OpenAI;
 			ses: SESClient;
 			r2: R2Bucket;
-			rateLimit: (name: string) => Promise<{ allowed: boolean }>;
 			trace: {
 				requestId: string;
 				organizationId?: string;

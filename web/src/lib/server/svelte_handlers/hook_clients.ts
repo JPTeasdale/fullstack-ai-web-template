@@ -88,54 +88,5 @@ export const r2: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-const RATE_LIMIT_CONFIG = {
-	free: {
-		capacity: 10,
-		refillAmount: 1,
-		refillFrequencyMs: 60 * 60 * 1000
-	},
-	basic: {
-		capacity: 100,
-		refillAmount: 10,
-		refillFrequencyMs: 60 * 60 * 1000
-	},
-	pro: {
-		capacity: 1000,
-		refillAmount: 100,
-		refillFrequencyMs: 60 * 60 * 1000
-	}
-};
 
-export const rateLimiter: Handle = async ({ event, resolve }) => {
-	const userId = event.locals.user?.id;
-	const platform = event.platform;
-	if (!userId || !platform) {
-		return resolve(event);
-	}
-
-	const id = platform.env.RATE_LIMITER.idFromName(userId);
-	const limiter = platform.env.RATE_LIMITER.get(id);
-	limiter.setConfig(RATE_LIMIT_CONFIG['free']);
-
-	event.locals.rateLimit = (plan: string) => {
-		if (dev) {
-			console.warn('Rate limiting disabled in dev');
-
-			return {
-				allowed: true
-			};
-		}
-		try {
-			return limiter.isAllowed(plan);
-		} catch (error) {
-			console.error('Error getting rate limiter', error);
-			return {
-				allowed: true
-			};
-		}
-	};
-
-	return resolve(event);
-};
-
-export const hookClients = sequence(posthog, posthogProxy, openai, ses, r2, rateLimiter);
+export const hookClients = sequence(posthog, posthogProxy, openai, ses, r2);

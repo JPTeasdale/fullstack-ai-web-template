@@ -1,28 +1,28 @@
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
-import { json } from '@sveltejs/kit';
+import { getOrganization } from '$lib/models/organizations';
+import { requireAuth, checkOrganizationRateLimit, createValidatedApiHandler } from '$lib/server/api/helpers';
+import type { AuthenticatedContext } from '$lib/models/context';
 import type { Tool } from 'openai/resources/responses/responses.mjs';
-import type { RequestEvent } from './$types';
+import { aiRequestSchema } from '$lib/schemas/ai';
 
-export async function POST(event: RequestEvent) {
+export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => {
 	const { orgId } = event.params;
-	const { supabase } = event.locals;
 
-	const limiter = await event.locals.rateLimit('basic');
-	if (!limiter?.allowed) {
-		return json({ error: 'Rate limit exceeded' }, { status: 429 });
-	}
+	// Ensure user is authenticated
+	await requireAuth(event);
 
-	const { data: organization, error } = await supabase
-		.from('organizations')
-		.select('*')
-		.eq('id', orgId)
-		.single();
+	// Create context
+	const ctx: AuthenticatedContext = { 
+		...event.locals, 
+		user: event.locals.user! 
+	};
 
-	if (error) {
-		console.error(error);
-		return json({ error: 'Internal server error' }, { status: 500 });
-	}
+	// Get organization using model function
+	const organization = await getOrganization(ctx, orgId!);
 
+	await checkOrganizationRateLimit(event, orgId!);
+
+	// Build tools array based on organization configuration
 	let tools: Tool[] = [];
 	if (organization.openai_vector_store_id) {
 		tools.push({
@@ -31,6 +31,7 @@ export async function POST(event: RequestEvent) {
 		});
 	}
 
+	// Handle the LLM request with the organization context
 	return await handleLlmRequest(event, {
 		async getInitialSystemPrompt() {
 			return '';
@@ -44,4 +45,4 @@ export async function POST(event: RequestEvent) {
 			tools
 		}
 	});
-}
+});

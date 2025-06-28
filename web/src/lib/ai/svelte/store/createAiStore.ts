@@ -46,8 +46,11 @@ export class AiConversationStore<T extends AiFunctionCallDefinitions> {
 
 		await handleStreamEvents<T>(res, {
 			onError: (error) => {
-				console.error('Error handling response:', error);
-				this.conversationError.set(errorStr(error));
+				const errStr = errorStr(error);
+				console.warn('SETTING CONVERSATION ERROR:', {
+					errStr
+				});
+				this.conversationError.set(errStr);
 			},
 			onFunctionCall: async (fnCall) => {
 				if (fnCall.call_id) {

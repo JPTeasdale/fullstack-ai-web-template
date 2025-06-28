@@ -2,6 +2,8 @@
  * Application-wide custom error classes for better error handling
  */
 
+import { formatDistanceToNow } from 'date-fns';
+
 /**
  * Error thrown when a requested resource is not found
  */
@@ -81,10 +83,10 @@ export class ServiceUnavailableError extends Error {
 export class RateLimitError extends Error {
 	constructor(
 		public readonly resource: string,
-		public readonly limit: number,
-		public readonly resetTime?: Date
+		public readonly resetTime: string,
+		public readonly capacity: number
 	) {
-		super(`Rate limit exceeded for ${resource}`);
+		super(`Rate limit exceeded for ${resource}. Try again in ${formatDistanceToNow(new Date(resetTime))}`);
 		this.name = 'RateLimitError';
 	}
 }

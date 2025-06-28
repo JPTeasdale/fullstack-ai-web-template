@@ -24,7 +24,7 @@
 		}
 	};
 
-	const { generating, conversation, sendMessage } = new AiConversationStore({
+	const { generating, conversation, sendMessage, conversationError } = new AiConversationStore({
 		handleAiFunctionCall: async () => {
 			// Return a proper LocalFunctionCallResult
 			return { result: 'Function call handled' };
@@ -32,6 +32,8 @@
 	});
 
 	const items = $derived($conversation);
+	const error = $derived($conversationError);
+	
 	const handleSendMessage = async (message: string) => {
 		await sendMessage('/api/v1/llm/handle-turn', message);
 	};
@@ -57,7 +59,7 @@
 		<SidebarLink {isExpanded} href={URL_DASHBOARD} label="Dashboard" Icon={House} />
 	{/snippet}
 	{#snippet chat()}
-		<Chat onSendMessage={handleSendMessage} generating={$generating} {items}>
+		<Chat onSendMessage={handleSendMessage} generating={$generating} {items} {error}>
 			{#snippet renderFormattedOutput(content)}
 				{#if content.formattedType === 'todo_list'}
 					{@const parsed = parse(content.text || '') as TodoExampleListPartial}

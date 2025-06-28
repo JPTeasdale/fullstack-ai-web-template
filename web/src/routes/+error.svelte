@@ -7,6 +7,7 @@
 
 	function getErrorTitle(status: number): string {
 		switch (status) {
+			
 			case 404:
 				return 'Page Not Found';
 			case 403:
