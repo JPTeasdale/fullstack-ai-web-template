@@ -22,4 +22,4 @@ export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => 
 			}
 		}
 	});
-}
+});
