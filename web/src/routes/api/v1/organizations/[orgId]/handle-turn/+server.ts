@@ -32,13 +32,14 @@ export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => 
 	}
 
 	// Handle the LLM request with the organization context
-	return await handleLlmRequest(event, {
+	return await handleLlmRequest(event.validated, {
 		async getInitialSystemPrompt() {
 			return '';
 		},
-		async getInitialUserPrompt(prompt: string | null) {
+		async getInitialUserPrompt({prompt}) {
 			return prompt || '';
 		},
+		client: event.locals.openai,
 		openai: {
 			model: 'gpt-4.1',
 			stream: true,

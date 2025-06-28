@@ -90,11 +90,10 @@ const RATE_LIMIT_CONFIG = {
 	}
 };
 
+function createRateLimitFunction(resource: 'user' | 'organization') {
+	const table = `${resource}_private` as const;
+	const id_field = `${resource}_id` as const;
 
-function createRateLimitFunction(
-	table: 'user_private' | 'organization_private',
-	id_field: 'user_id' | 'organization_id'
-) {
 	return async (event: RequestEvent, id?: string) => {
 		if (!id) {
 			throw new UnauthorizedError();
@@ -116,19 +115,23 @@ function createRateLimitFunction(
 			throw new NotFoundError('Rate limit config not found');
 		}
 
+		const now = Date.now();
+		const elapsedMs = differenceInMilliseconds(now, data.call_tokens_last_refill);
+		const refillCycles = Math.floor(elapsedMs / config.refillFrequencyMs);
 		const nextRefill = addMilliseconds(data.call_tokens_last_refill, config.refillFrequencyMs);
 
-		const now = Date.now();
-		if (isAfter(now, nextRefill)) {
-			const newTokens = Math.min(data.call_tokens_remaining + config.refillAmount, config.capacity);
+		if (refillCycles > 0) {
+			const newTokenAmount = Math.min(
+				data.call_tokens_remaining + refillCycles * config.refillAmount,
+				config.capacity
+			);
 
-			// Ensure we don't steal time from the user by overwriting remainder time
-			const elapsedMs = differenceInMilliseconds(now, data.call_tokens_last_refill);
+			// Keep the remainder time to make sure we don't steal time from the user
 			const remainingMs = elapsedMs % config.refillFrequencyMs;
 			await event.locals.supabaseAdmin
 				.from(table)
 				.update({
-					call_tokens_remaining: newTokens - 1,
+					call_tokens_remaining: newTokenAmount - 1,
 					call_tokens_last_refill: subMilliseconds(now, remainingMs).toISOString()
 				})
 				.eq(id_field, id);
@@ -137,7 +140,7 @@ function createRateLimitFunction(
 		}
 
 		if (data.call_tokens_remaining <= 0) {
-			throw new RateLimitError('user', nextRefill.toISOString(), config.capacity);
+			throw new RateLimitError(resource, nextRefill.toISOString(), config.capacity);
 		}
 
 		await event.locals.supabaseAdmin
@@ -154,5 +157,5 @@ function createRateLimitFunction(
  * Check rate limit with custom error
  */
 
-export const checkUserRateLimit = createRateLimitFunction('user_private', 'user_id');
-export const checkOrganizationRateLimit = createRateLimitFunction('organization_private', 'organization_id');
+export const checkUserRateLimit = createRateLimitFunction('user');
+export const checkOrganizationRateLimit = createRateLimitFunction('organization');

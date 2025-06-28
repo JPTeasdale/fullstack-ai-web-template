@@ -8,6 +8,6 @@ export const aiFunctionCallResultSchema = z.object({
 // File validation schemas
 export const aiRequestSchema = z.object({
 	prompt: z.string().optional(),
-	previousResponseId: z.string().optional(),
+	previousResponseId: z.string().nullable(),
 	fnCallResults: z.array(aiFunctionCallResultSchema).optional(),
 });

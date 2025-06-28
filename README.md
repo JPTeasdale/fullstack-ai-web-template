@@ -333,9 +333,11 @@ You'll need accounts for the following services:
 Replace these placeholders throughout the codebase:
 - `fullstack-ai-web-template` → `your-project-name` (hyphenated)
 - `template.johnteasdale.com` → `your-domain.com` (no https://)
-- `TODO_SUPABASE_PROJECT_ID` → Your Supabase project ID
+- `yiyzinklawwrknnkrsew` → Your Supabase project ID
 
 ### 4. Environment Configuration
+
+This envoronment file contains variables that are useful from the command line. 
 
 ```bash
 # Copy the example environment file
@@ -399,7 +401,7 @@ npm run stripe
    # Apply migrations
    supabase db reset
    
-   # Regenerate Supabase types 
+   # Regenerate Supabase types
    npm run db:changed
    ```
 

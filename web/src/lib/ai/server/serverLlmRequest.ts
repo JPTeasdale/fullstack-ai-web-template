@@ -9,21 +9,22 @@ import {
 	setOutputItemFormattedTypeTransform
 } from './network/streamTransforms';
 import { applyOutputItemFormat } from './network/applyOutputItemFormat';
+import OpenAI from 'openai';
 
-interface LLMOptions<T extends RequestEvent, F extends AiFunctionCallDefinitions> {
-	getInitialSystemPrompt: (event: T) => Promise<string>;
-	getInitialUserPrompt: (prompt: string | null, event: T) => Promise<string>;
+interface LLMOptions<F extends AiFunctionCallDefinitions> {
+	getInitialSystemPrompt: (requestBody: AiRequestBody) => Promise<string>;
+	getInitialUserPrompt: (requestBody: AiRequestBody) => Promise<string>;
+	client: OpenAI;
 	functionCallMap?: FunctionCallMap<F>;
 	openai: Omit<ResponseCreateParams, 'input'>;
 	formattedType?: string;
 }
 
-export async function handleLlmRequest<
-	T extends RequestEvent,
-	F extends AiFunctionCallDefinitions = never
->(event: T, opts: LLMOptions<T, F>) {
-	const { openai } = event.locals;
-	const requestBody = (await event.request.json()) as AiRequestBody;
+export async function handleLlmRequest<F extends AiFunctionCallDefinitions = never>(
+	requestBody: AiRequestBody,
+	opts: LLMOptions<F>
+) {
+	const { client } = opts;
 
 	const fnCallResults = requestBody.fnCallResults || [];
 	const prompt = requestBody.prompt || null;
@@ -36,8 +37,8 @@ export async function handleLlmRequest<
 
 	if (!requestBody.previousResponseId) {
 		const [systemPrompt, userPrompt] = await Promise.all([
-			opts.getInitialSystemPrompt(event),
-			opts.getInitialUserPrompt(prompt, event)
+			opts.getInitialSystemPrompt(requestBody),
+			opts.getInitialUserPrompt(requestBody)
 		]);
 		if (systemPrompt) {
 			input.push({
@@ -58,7 +59,7 @@ export async function handleLlmRequest<
 		});
 	}
 	try {
-		const response = await openai.responses.create({
+		const response = await client.responses.create({
 			previous_response_id: requestBody.previousResponseId,
 			input,
 			...opts.openai
