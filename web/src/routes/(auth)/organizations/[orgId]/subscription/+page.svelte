@@ -3,9 +3,11 @@
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { APP_SUBSCRIPTION_PLAN_TYPES } from '$lib/app/constants';
 
 	let { data }: { data: PageData } = $props();
 
+	const plans = APP_SUBSCRIPTION_PLAN_TYPES;
 	let selectedPlan = $state<'basic' | 'pro' | null>(null);
 	let selectedInterval = $state<string>('');
 	let isLoading = $state(false);
@@ -46,47 +48,6 @@
 	}
 
 	// Plans data with features
-	const plans = {
-		basic: {
-			name: 'Basic',
-			fromPrice: 100 / 12,
-			popular: false,
-			description: 'for getting started',
-			features: [
-				'Up to 10 team members',
-				'5GB storage',
-				'Basic analytics',
-				'Email support',
-				'Standard integrations'
-			],
-			intervals: [
-				{ id: 'basic_weekly', name: 'Weekly', price: 5, interval: 'week' },
-				{ id: 'basic_monthly', name: 'Monthly', price: 10, interval: 'month' },
-				{ id: 'basic_yearly', name: 'Yearly', price: 100, interval: 'year' }
-			]
-		},
-		pro: {
-			name: 'Pro',
-			fromPrice: 250 / 12,
-			popular: true,
-			description: 'for growing teams',
-			features: [
-				'Unlimited team members',
-				'100GB storage',
-				'Advanced analytics & insights',
-				'Priority email & chat support',
-				'All integrations',
-				'Custom workflows',
-				'API access'
-			],
-			intervals: [
-				{ id: 'pro_weekly', name: 'Weekly', price: 10, interval: 'week' },
-				{ id: 'pro_monthly', name: 'Monthly', price: 25, interval: 'month' },
-				{ id: 'pro_yearly', name: 'Yearly', price: 250, interval: 'year' }
-			]
-		}
-	};
-
 	function openPlanDialog(planType: 'basic' | 'pro') {
 		selectedPlan = planType;
 		selectedInterval = '';

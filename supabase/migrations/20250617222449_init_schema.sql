@@ -375,8 +375,10 @@ CREATE TYPE public.subscription_status AS ENUM (
 -- Create enum for subscription status
 CREATE TYPE public.app_subscription_type AS ENUM (
     'basic_weekly',
+    'basic_monthly',
     'basic_yearly',
     'pro_weekly',
+    'pro_monthly',
     'pro_yearly'
 );
 -- Create subscriptions table

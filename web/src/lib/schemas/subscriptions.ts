@@ -1,9 +1,10 @@
+import { APP_SUBSCRIPTION_INTERVAL_IDS } from '$lib/app/constants';
 import { z } from 'zod';
 
 // Subscription action schemas
 export const createSubscriptionSchema = z.object({
-	plan: z.enum(['basic_weekly', 'basic_yearly', 'pro_weekly', 'pro_yearly'], {
-		errorMap: () => ({ message: 'Please select a valid subscription plan' })
+	plan: z.string().refine((plan) => (APP_SUBSCRIPTION_INTERVAL_IDS as string[]).includes(plan), {
+		message: 'Invalid plan'
 	})
 });
 

@@ -6,9 +6,6 @@ import {
 } from '$lib/server/actions/helpers';
 import {
 	createSubscriptionSchema,
-	cancelSubscriptionSchema,
-	reactivateSubscriptionSchema,
-	updatePaymentMethodSchema
 } from '$lib/schemas/subscriptions';
 import {
 	getOrganizationSubscription,
