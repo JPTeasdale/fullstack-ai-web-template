@@ -1,25 +1,8 @@
+import { APP_RATE_LIMIT_CONFIG } from "$lib/app/constants";
 import { NotFoundError, RateLimitError, UnauthorizedError } from "$lib/errors";
 import type { RequestEvent } from "@sveltejs/kit";
 import { differenceInMilliseconds, subMilliseconds } from "date-fns";
 import { addMilliseconds } from "date-fns";
-
-const RATE_LIMIT_CONFIG = {
-	free: {
-		capacity: 10,
-		refillAmount: 1,
-		refillFrequencyMs: 60 * 60 * 1000
-	},
-	basic: {
-		capacity: 100,
-		refillAmount: 10,
-		refillFrequencyMs: 60 * 60 * 1000
-	},
-	pro: {
-		capacity: 1000,
-		refillAmount: 100,
-		refillFrequencyMs: 60 * 60 * 1000
-	}
-};
 
 function createRateLimitFunction(resource: 'user' | 'organization') {
 	const table = `${resource}_private` as const;
@@ -40,7 +23,7 @@ function createRateLimitFunction(resource: 'user' | 'organization') {
 			throw new NotFoundError('Organization not found');
 		}
 
-		const config = RATE_LIMIT_CONFIG[data.plan];
+		const config = APP_RATE_LIMIT_CONFIG[data.plan];
 
 		if (!config) {
 			throw new NotFoundError('Rate limit config not found');

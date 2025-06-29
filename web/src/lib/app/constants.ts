@@ -46,3 +46,21 @@ export const APP_SUBSCRIPTION_PLAN_TYPES = {
 export const APP_SUBSCRIPTION_INTERVAL_IDS: Enums<'app_subscription_type'>[] = Object.values(APP_SUBSCRIPTION_PLAN_TYPES).flatMap(
 	(plan) => plan.intervals.flatMap((interval) => interval.id)
 );
+
+export const APP_RATE_LIMIT_CONFIG = {
+	free: {
+		capacity: 10,
+		refillAmount: 1,
+		refillFrequencyMs: 60 * 60 * 1000
+	},
+	basic: {
+		capacity: 100,
+		refillAmount: 10,
+		refillFrequencyMs: 60 * 60 * 1000
+	},
+	pro: {
+		capacity: 1000,
+		refillAmount: 100,
+		refillFrequencyMs: 60 * 60 * 1000
+	}
+};
