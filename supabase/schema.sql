@@ -35,10 +35,8 @@ ALTER TYPE "public"."app_subscription_tier" OWNER TO "postgres";
 
 CREATE TYPE "public"."app_subscription_type" AS ENUM (
     'basic_weekly',
-    'basic_monthly',
     'basic_yearly',
     'pro_weekly',
-    'pro_monthly',
     'pro_yearly'
 );
 
@@ -319,6 +317,47 @@ $$;
 ALTER FUNCTION "public"."handle_organization_private_sync"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."handle_subscription_plan_sync"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+    new_plan public.app_subscription_tier;
+BEGIN
+    -- Determine the plan tier based on subscription type and status
+    IF NEW.status IN ('active', 'trialing') AND NEW.app_subscription_type IS NOT NULL THEN
+        new_plan := CASE
+            WHEN NEW.app_subscription_type::text LIKE 'basic_%' THEN 'basic'::public.app_subscription_tier
+            WHEN NEW.app_subscription_type::text LIKE 'pro_%' THEN 'pro'::public.app_subscription_tier
+            ELSE 'free'::public.app_subscription_tier
+        END;
+    ELSE
+        new_plan := 'free'::public.app_subscription_tier;
+    END IF;
+    
+    -- Update the appropriate private table
+    IF NEW.user_id IS NOT NULL THEN
+        -- Update user private plan
+        UPDATE public.user_private
+        SET plan = new_plan,
+            updated_at = NOW()
+        WHERE user_id = NEW.user_id;
+    ELSIF NEW.organization_id IS NOT NULL THEN
+        -- Update organization private plan
+        UPDATE public.organization_private
+        SET plan = new_plan,
+            updated_at = NOW()
+        WHERE organization_id = NEW.organization_id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_subscription_plan_sync"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."handle_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO ''
@@ -474,7 +513,7 @@ CREATE TABLE IF NOT EXISTS "public"."organization_private" (
     "organization_id" "uuid" NOT NULL,
     "plan" "public"."app_subscription_tier" DEFAULT 'free'::"public"."app_subscription_tier" NOT NULL,
     "call_tokens_remaining" integer DEFAULT 0 NOT NULL,
-    "call_tokens_last_refill" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "call_tokens_last_refill" timestamp with time zone DEFAULT ("now"() - '1 year'::interval) NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
@@ -528,7 +567,7 @@ CREATE TABLE IF NOT EXISTS "public"."user_private" (
     "openai_vector_store_id" "text",
     "plan" "public"."app_subscription_tier" DEFAULT 'free'::"public"."app_subscription_tier" NOT NULL,
     "call_tokens_remaining" integer DEFAULT 0 NOT NULL,
-    "call_tokens_last_refill" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "call_tokens_last_refill" timestamp with time zone DEFAULT ("now"() - '1 year'::interval) NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
@@ -766,6 +805,10 @@ CREATE OR REPLACE TRIGGER "organization_private_updated_at" BEFORE UPDATE ON "pu
 
 
 CREATE OR REPLACE TRIGGER "organizations_updated_at" BEFORE UPDATE ON "public"."organizations" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "subscription_plan_sync" AFTER INSERT OR UPDATE ON "public"."subscriptions" FOR EACH ROW EXECUTE FUNCTION "public"."handle_subscription_plan_sync"();
 
 
 
@@ -1027,6 +1070,12 @@ GRANT ALL ON FUNCTION "public"."get_current_organization_id"() TO "service_role"
 GRANT ALL ON FUNCTION "public"."handle_organization_private_sync"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_organization_private_sync"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_organization_private_sync"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_subscription_plan_sync"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_subscription_plan_sync"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_subscription_plan_sync"() TO "service_role";
 
 
 

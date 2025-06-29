@@ -1,9 +1,10 @@
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
 import { getOrganization } from '$lib/models/organizations';
-import { requireAuth, checkOrganizationRateLimit, createValidatedApiHandler } from '$lib/server/api/helpers';
+import { requireAuth, createValidatedApiHandler } from '$lib/server/api/helpers';
 import type { AuthenticatedContext } from '$lib/models/context';
 import type { Tool } from 'openai/resources/responses/responses.mjs';
 import { aiRequestSchema } from '$lib/schemas/ai';
+import { checkOrganizationRateLimit } from '$lib/server/api/rate-limit';
 
 export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => {
 	const { orgId } = event.params;
@@ -12,9 +13,9 @@ export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => 
 	await requireAuth(event);
 
 	// Create context
-	const ctx: AuthenticatedContext = { 
-		...event.locals, 
-		user: event.locals.user! 
+	const ctx: AuthenticatedContext = {
+		...event.locals,
+		user: event.locals.user!
 	};
 
 	// Get organization using model function
@@ -36,7 +37,7 @@ export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => 
 		async getInitialSystemPrompt() {
 			return '';
 		},
-		async getInitialUserPrompt({prompt}) {
+		async getInitialUserPrompt({ prompt }) {
 			return prompt || '';
 		},
 		client: event.locals.openai,

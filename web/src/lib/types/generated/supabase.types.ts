@@ -563,10 +563,8 @@ export type Database = {
       app_subscription_tier: "free" | "basic" | "pro"
       app_subscription_type:
         | "basic_weekly"
-        | "basic_monthly"
         | "basic_yearly"
         | "pro_weekly"
-        | "pro_monthly"
         | "pro_yearly"
       audit_action:
         | "create"
@@ -716,10 +714,8 @@ export const Constants = {
       app_subscription_tier: ["free", "basic", "pro"],
       app_subscription_type: [
         "basic_weekly",
-        "basic_monthly",
         "basic_yearly",
         "pro_weekly",
-        "pro_monthly",
         "pro_yearly",
       ],
       audit_action: [

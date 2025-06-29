@@ -1,7 +1,8 @@
 import { formatTodoList } from '$lib/ai/schemas/todo_example_schema';
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
 import { aiRequestSchema } from '$lib/schemas/ai';
-import { checkUserRateLimit, createValidatedApiHandler } from '$lib/server/api/helpers';
+import { createValidatedApiHandler } from '$lib/server/api/helpers';
+import { checkUserRateLimit } from '$lib/server/api/rate-limit';
 
 export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => {
 	await checkUserRateLimit(event, event.locals.user?.id);
