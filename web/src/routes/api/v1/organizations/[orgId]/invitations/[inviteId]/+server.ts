@@ -1,20 +1,20 @@
-import { cancelInvitation } from '$lib/models/invitations';
-import { createApiHandler, requireAuth } from '$lib/server/api/helpers';
+import { cancelInvitation } from '$lib/server/models/invitations';
+import { assertAuthenticated, extractOrganizationId } from '$lib/server/api/context';
+import { createOrganizationApiHandler } from '$lib/server/api/helpers';
 import { noContentResponse } from '$lib/server/api/response';
+import { ConfigurationError } from '$lib/server/errors';
 
-export const DELETE = createApiHandler(async (event) => {
-	const { orgId, inviteId } = event.params;
+export const DELETE = createOrganizationApiHandler(async (event) => {
+	assertAuthenticated(event);
+	const organizationId = extractOrganizationId(event);
 
-	await requireAuth(event);
+	const { inviteId } = event.params;
 
-	// Create org context - RLS will handle permission check
-	const ctx = {
-		...event.locals,
-		user: event.locals.user!,
-		organizationId: orgId!
-	};
+	if (!inviteId) {
+		throw new ConfigurationError('Invite ID is required');
+	}
 
-	await cancelInvitation(ctx, inviteId!);
+	await cancelInvitation(event, organizationId, inviteId);
 
 	return noContentResponse();
 });

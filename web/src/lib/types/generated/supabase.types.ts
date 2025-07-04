@@ -77,7 +77,7 @@ export type Database = {
           organization_id: string | null
           size: number
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           checksum?: string | null
@@ -92,7 +92,7 @@ export type Database = {
           organization_id?: string | null
           size: number
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           checksum?: string | null
@@ -107,7 +107,7 @@ export type Database = {
           organization_id?: string | null
           size?: number
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -134,11 +134,17 @@ export type Database = {
           expires_at: string
           id: string
           invited_by: string
+          invited_by_avatar_url: string | null
+          invited_by_name: string | null
+          organization_description: string | null
           organization_id: string
+          organization_logo_url: string | null
+          organization_name: string
           role: Database["public"]["Enums"]["member_role"]
           status: Database["public"]["Enums"]["invitation_status"]
           token: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -147,11 +153,17 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by: string
+          invited_by_avatar_url?: string | null
+          invited_by_name?: string | null
+          organization_description?: string | null
           organization_id: string
+          organization_logo_url?: string | null
+          organization_name: string
           role?: Database["public"]["Enums"]["member_role"]
           status?: Database["public"]["Enums"]["invitation_status"]
           token?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -160,11 +172,17 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string
+          invited_by_avatar_url?: string | null
+          invited_by_name?: string | null
+          organization_description?: string | null
           organization_id?: string
+          organization_logo_url?: string | null
+          organization_name?: string
           role?: Database["public"]["Enums"]["member_role"]
           status?: Database["public"]["Enums"]["invitation_status"]
           token?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -180,6 +198,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -284,6 +309,7 @@ export type Database = {
           call_tokens_last_refill: string
           call_tokens_remaining: number
           created_at: string
+          openai_vector_store_id: string | null
           organization_id: string
           plan: Database["public"]["Enums"]["app_subscription_tier"]
           updated_at: string
@@ -292,6 +318,7 @@ export type Database = {
           call_tokens_last_refill?: string
           call_tokens_remaining?: number
           created_at?: string
+          openai_vector_store_id?: string | null
           organization_id: string
           plan?: Database["public"]["Enums"]["app_subscription_tier"]
           updated_at?: string
@@ -300,6 +327,7 @@ export type Database = {
           call_tokens_last_refill?: string
           call_tokens_remaining?: number
           created_at?: string
+          openai_vector_store_id?: string | null
           organization_id?: string
           plan?: Database["public"]["Enums"]["app_subscription_tier"]
           updated_at?: string
@@ -322,7 +350,6 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
-          openai_vector_store_id: string | null
           slug: string
           updated_at: string
           website_url: string | null
@@ -334,7 +361,6 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
-          openai_vector_store_id?: string | null
           slug: string
           updated_at?: string
           website_url?: string | null
@@ -346,7 +372,6 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
-          openai_vector_store_id?: string | null
           slug?: string
           updated_at?: string
           website_url?: string | null
@@ -441,6 +466,7 @@ export type Database = {
           call_tokens_last_refill: string
           call_tokens_remaining: number
           created_at: string
+          is_admin: boolean
           openai_vector_store_id: string | null
           plan: Database["public"]["Enums"]["app_subscription_tier"]
           stripe_customer_id: string | null
@@ -451,6 +477,7 @@ export type Database = {
           call_tokens_last_refill?: string
           call_tokens_remaining?: number
           created_at?: string
+          is_admin?: boolean
           openai_vector_store_id?: string | null
           plan?: Database["public"]["Enums"]["app_subscription_tier"]
           stripe_customer_id?: string | null
@@ -461,6 +488,7 @@ export type Database = {
           call_tokens_last_refill?: string
           call_tokens_remaining?: number
           created_at?: string
+          is_admin?: boolean
           openai_vector_store_id?: string | null
           plan?: Database["public"]["Enums"]["app_subscription_tier"]
           stripe_customer_id?: string | null
@@ -525,6 +553,30 @@ export type Database = {
           minimum_role?: Database["public"]["Enums"]["member_role"]
         }
         Returns: boolean
+      }
+      citext: {
+        Args: { "": boolean } | { "": string } | { "": unknown }
+        Returns: string
+      }
+      citext_hash: {
+        Args: { "": string }
+        Returns: number
+      }
+      citextin: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextout: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      citextrecv: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextsend: {
+        Args: { "": string }
+        Returns: string
       }
       create_organization_with_owner: {
         Args: { org_name: string; org_slug: string; org_description?: string }

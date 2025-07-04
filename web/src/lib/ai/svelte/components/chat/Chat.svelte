@@ -205,7 +205,7 @@
 				{#if props.error}
 					<div class="absolute right-0 bottom-0 left-0 p-4" transition:slide={{ duration: 200 }}>
 						<div
-							class="rounded-sm border border-red-500 bg-red-100 text-center text-xs p-2 text-red-500"
+							class="rounded-sm border border-red-500 bg-red-100 p-2 text-center text-xs text-red-500"
 						>
 							{props.error}
 						</div>

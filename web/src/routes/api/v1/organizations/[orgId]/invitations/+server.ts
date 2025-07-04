@@ -1,48 +1,25 @@
-import { createInvitation, getOrganizationInvitations } from '$lib/models/invitations';
-import { createValidatedApiHandler, createApiHandler, requireAuth } from '$lib/server/api/helpers';
+import { getOrganizationInvitations } from '$lib/server/models/invitations';
+import {
+	createValidatedOrganizationApiHandler,
+	createOrganizationApiHandler
+} from '$lib/server/api/helpers';
 import { successResponse, createdResponse } from '$lib/server/api/response';
 import { inviteMemberSchema } from '$lib/schemas/organizations';
-import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
+import { extractOrganizationId } from '$lib/server/api/context';
+import { inviteToOrg } from '$lib/server/models/invitations/invite_to_org';
 
-export const GET = createApiHandler(async (event) => {
-	const { orgId } = event.params;
+export const GET = createOrganizationApiHandler(async (event) => {
+	const orgId = extractOrganizationId(event);
 
-	await requireAuth(event);
-
-	// Create org context
-	const ctx = {
-		...event.locals,
-		user: event.locals.user!,
-		organizationId: orgId!
-	};
-
-	const invitations = await getOrganizationInvitations(ctx);
+	const invitations = await getOrganizationInvitations(event, orgId);
 
 	return successResponse(invitations);
 });
 
-export const POST = createValidatedApiHandler(inviteMemberSchema, async (event) => {
-	const { orgId } = event.params;
-	const data = event.validated;
+export const POST = createValidatedOrganizationApiHandler(inviteMemberSchema, async (event) => {
+	const organizationId = extractOrganizationId(event);
 
-	await requireAuth(event);
+	await inviteToOrg(event, organizationId, event.validated);
 
-	// Create org context - RLS will handle permission check
-	const ctx = {
-		...event.locals,
-		user: event.locals.user!,
-		organizationId: orgId!
-	};
-
-	const { invitation, organization } = await createInvitation(ctx, data);
-
-	// Send email (non-blocking)
-	getInviteToOrgTemplate({
-		inviteLink: `${event.url.origin}/invitations`,
-		orgName: organization.name,
-		email: data.email,
-		inviterName: event.locals.user?.email || ''
-	});
-
-	return createdResponse({ success: true, invitation });
+	return createdResponse({ success: true });
 });

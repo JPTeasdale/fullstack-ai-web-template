@@ -118,9 +118,9 @@ CREATE OR REPLACE FUNCTION "public"."accept_invitation"("invitation_token" "text
     SET "search_path" TO ''
     AS $$
 DECLARE invitation_record RECORD;
-user_email TEXT;
+v_user_email text;
 BEGIN -- Get current user email
-SELECT email INTO user_email
+SELECT email INTO v_user_email
 FROM auth.users
 WHERE id = auth.uid();
 SELECT * INTO invitation_record
@@ -128,7 +128,10 @@ FROM public.invitations
 WHERE token = invitation_token
     AND status = 'pending'
     AND expires_at > NOW()
-    AND email = user_email;
+    AND (
+        email = v_user_email
+        OR user_id = auth.uid()
+    );
 IF NOT FOUND THEN RETURN FALSE;
 END IF;
 INSERT INTO public.organization_members (organization_id, user_id, role, invited_by)
@@ -307,11 +310,10 @@ ALTER FUNCTION "public"."get_current_organization_id"() OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."handle_organization_private_sync"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
-    AS $$
-BEGIN
-    INSERT INTO public.organization_private (organization_id)
-    VALUES (NEW.id);
-    RETURN NEW;
+    AS $$ BEGIN
+INSERT INTO public.organization_private (organization_id)
+VALUES (NEW.id);
+RETURN NEW;
 END;
 $$;
 
@@ -323,36 +325,28 @@ CREATE OR REPLACE FUNCTION "public"."handle_subscription_plan_sync"() RETURNS "t
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-DECLARE
-    new_plan public.app_subscription_tier;
-BEGIN
-    -- Determine the plan tier based on subscription type and status
-    IF NEW.status IN ('active', 'trialing') AND NEW.app_subscription_type IS NOT NULL THEN
-        new_plan := CASE
-            WHEN NEW.app_subscription_type::text LIKE 'basic_%' THEN 'basic'::public.app_subscription_tier
-            WHEN NEW.app_subscription_type::text LIKE 'pro_%' THEN 'pro'::public.app_subscription_tier
-            ELSE 'free'::public.app_subscription_tier
-        END;
-    ELSE
-        new_plan := 'free'::public.app_subscription_tier;
-    END IF;
-    
-    -- Update the appropriate private table
-    IF NEW.user_id IS NOT NULL THEN
-        -- Update user private plan
-        UPDATE public.user_private
-        SET plan = new_plan,
-            updated_at = NOW()
-        WHERE user_id = NEW.user_id;
-    ELSIF NEW.organization_id IS NOT NULL THEN
-        -- Update organization private plan
-        UPDATE public.organization_private
-        SET plan = new_plan,
-            updated_at = NOW()
-        WHERE organization_id = NEW.organization_id;
-    END IF;
-    
-    RETURN NEW;
+DECLARE new_plan public.app_subscription_tier;
+BEGIN -- Determine the plan tier based on subscription type and status
+IF NEW.status IN ('active', 'trialing')
+AND NEW.app_subscription_type IS NOT NULL THEN new_plan := CASE
+    WHEN NEW.app_subscription_type::text LIKE 'basic_%' THEN 'basic'::public.app_subscription_tier
+    WHEN NEW.app_subscription_type::text LIKE 'pro_%' THEN 'pro'::public.app_subscription_tier
+    ELSE 'free'::public.app_subscription_tier
+END;
+ELSE new_plan := 'free'::public.app_subscription_tier;
+END IF;
+IF NEW.user_id IS NOT NULL THEN -- Update user private plan
+UPDATE public.user_private
+SET plan = new_plan,
+    updated_at = NOW()
+WHERE user_id = NEW.user_id;
+ELSIF NEW.organization_id IS NOT NULL THEN -- Update organization private plan
+UPDATE public.organization_private
+SET plan = new_plan,
+    updated_at = NOW()
+WHERE organization_id = NEW.organization_id;
+END IF;
+RETURN NEW;
 END;
 $$;
 
@@ -462,7 +456,7 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
     "size" bigint NOT NULL,
     "mime_type" "text" NOT NULL,
     "checksum" "text",
-    "user_id" "uuid" NOT NULL,
+    "user_id" "uuid",
     "organization_id" "uuid",
     "is_public" boolean DEFAULT false NOT NULL,
     "metadata" "jsonb" DEFAULT '{}'::"jsonb",
@@ -470,7 +464,8 @@ CREATE TABLE IF NOT EXISTS "public"."files" (
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "openai_file_id" "text",
     "is_ready" boolean DEFAULT false NOT NULL,
-    CONSTRAINT "files_size_positive" CHECK (("size" > 0))
+    CONSTRAINT "files_size_positive" CHECK (("size" > 0)),
+    CONSTRAINT "files_user_id_or_organization_id_not_null" CHECK (((("user_id" IS NOT NULL) AND ("organization_id" IS NULL)) OR (("user_id" IS NULL) AND ("organization_id" IS NOT NULL))))
 );
 
 
@@ -479,10 +474,16 @@ ALTER TABLE "public"."files" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."invitations" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid",
     "organization_id" "uuid" NOT NULL,
+    "organization_name" "text" NOT NULL,
+    "organization_description" "text",
+    "organization_logo_url" "text",
     "email" "text" NOT NULL,
     "role" "public"."member_role" DEFAULT 'member'::"public"."member_role" NOT NULL,
     "invited_by" "uuid" NOT NULL,
+    "invited_by_name" "text",
+    "invited_by_avatar_url" "text",
     "status" "public"."invitation_status" DEFAULT 'pending'::"public"."invitation_status" NOT NULL,
     "token" "text" DEFAULT "encode"("extensions"."gen_random_bytes"(32), 'hex'::"text") NOT NULL,
     "expires_at" timestamp with time zone DEFAULT ("now"() + '7 days'::interval) NOT NULL,
@@ -516,6 +517,7 @@ CREATE TABLE IF NOT EXISTS "public"."organization_private" (
     "plan" "public"."app_subscription_tier" DEFAULT 'free'::"public"."app_subscription_tier" NOT NULL,
     "call_tokens_remaining" integer DEFAULT 0 NOT NULL,
     "call_tokens_last_refill" timestamp with time zone DEFAULT ("now"() - '1 year'::interval) NOT NULL,
+    "openai_vector_store_id" "text",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
@@ -531,7 +533,6 @@ CREATE TABLE IF NOT EXISTS "public"."organizations" (
     "description" "text",
     "logo_url" "text",
     "website_url" "text",
-    "openai_vector_store_id" "text",
     "created_by" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
@@ -570,6 +571,7 @@ CREATE TABLE IF NOT EXISTS "public"."user_private" (
     "plan" "public"."app_subscription_tier" DEFAULT 'free'::"public"."app_subscription_tier" NOT NULL,
     "call_tokens_remaining" integer DEFAULT 0 NOT NULL,
     "call_tokens_last_refill" timestamp with time zone DEFAULT ("now"() - '1 year'::interval) NOT NULL,
+    "is_admin" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
@@ -856,6 +858,11 @@ ALTER TABLE ONLY "public"."invitations"
 
 
 
+ALTER TABLE ONLY "public"."invitations"
+    ADD CONSTRAINT "invitations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."notifications"
     ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."user_profiles"("user_id") ON DELETE CASCADE;
 
@@ -906,11 +913,7 @@ ALTER TABLE ONLY "public"."user_profiles"
 
 
 
-CREATE POLICY "Organization admins can delete organization files" ON "public"."files" FOR DELETE USING (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org"));
-
-
-
-CREATE POLICY "Organization admins can update organization files" ON "public"."files" FOR UPDATE USING (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org")) WITH CHECK (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org"));
+CREATE POLICY "Organization admins can manage organization files" ON "public"."files" USING (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org")) WITH CHECK (( SELECT "public"."authorize_active_org"("files"."organization_id", 'admin'::"public"."member_role") AS "authorize_active_org"));
 
 
 
@@ -918,11 +921,11 @@ CREATE POLICY "Organization members can view and manage invitations for their " 
 
 
 
-CREATE POLICY "Users can delete their own files" ON "public"."files" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert their own profile" ON "public"."user_profiles" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "Users can manage their own files" ON "public"."files" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 
 
@@ -938,19 +941,11 @@ CREATE POLICY "Users can select thir own memberships" ON "public"."organization_
 
 
 
-CREATE POLICY "Users can update their own files" ON "public"."files" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own profile" ON "public"."user_profiles" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 
 
-CREATE POLICY "Users can upload files to organizations they belong to" ON "public"."files" FOR INSERT WITH CHECK ((( SELECT "public"."authorize_active_org"("files"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org") AND (( SELECT "auth"."uid"() AS "uid") = "user_id")));
-
-
-
-CREATE POLICY "Users can upload their own files" ON "public"."files" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Users can upload files to organizations they belong to" ON "public"."files" FOR INSERT WITH CHECK (( SELECT "public"."authorize_active_org"("files"."organization_id", 'member'::"public"."member_role") AS "authorize_active_org"));
 
 
 
@@ -970,6 +965,13 @@ CREATE POLICY "Users can view organization files they belong to" ON "public"."fi
 
 
 
+CREATE POLICY "Users can view profiles of members in their active organization" ON "public"."user_profiles" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM ("public"."organization_members" "om1"
+     JOIN "public"."organization_members" "om2" ON (("om1"."organization_id" = "om2"."organization_id")))
+  WHERE (("om1"."user_id" = "auth"."uid"()) AND ("om2"."user_id" = "user_profiles"."user_id") AND ("om1"."organization_id" = "public"."current_active_organization_id"())))));
+
+
+
 CREATE POLICY "Users can view public files" ON "public"."files" FOR SELECT USING (("is_public" = true));
 
 
@@ -978,7 +980,9 @@ CREATE POLICY "Users can view their organization's subscription" ON "public"."su
 
 
 
-CREATE POLICY "Users can view their own files" ON "public"."files" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Users can view their own invitations" ON "public"."invitations" FOR SELECT USING (((( SELECT "auth"."uid"() AS "uid") = "user_id") OR ("email" = ( SELECT "up"."email"
+   FROM "public"."user_profiles" "up"
+  WHERE ("up"."user_id" = "auth"."uid"())))));
 
 
 

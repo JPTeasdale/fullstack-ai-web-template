@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
+
 # SvelteKit
 
 - Always use Svelte5 with runes.
@@ -12,8 +13,8 @@ alwaysApply: true
 
 # Styling
 
-- Never use gradients. 
-- Always use tailwind classes instead of `<style>` blocks. 
+- Never use gradients.
+- Always use tailwind classes instead of `<style>` blocks.
 
 # Project Organization
 
@@ -30,41 +31,47 @@ alwaysApply: true
 ## Model Layer
 
 ### Context Pattern
+
 All models receive a context object as their first parameter:
 
 ```typescript
 // Base context for all operations
 interface BaseContext {
-  supabase: SupabaseClient
-  openai: OpenAI
-  r2: R2Bucket
-  posthog?: PostHog
+  supabase: SupabaseClient;
+  openai: OpenAI;
+  r2: R2Bucket;
+  posthog?: PostHog;
 }
 
 // For authenticated operations
 interface AuthenticatedContext extends BaseContext {
   user: {
-    id: string
-    email: string
-  }
+    id: string;
+    email: string;
+  };
 }
 ```
 
 Example model function:
+
 ```typescript
-export const getOrganization = async (ctx: BaseContext, id: string) => {
+export const getOrganization = async (
+  ctx: AuthenticatedContxt,
+  orgId: string
+) => {
   const { data, error } = await ctx.supabase
-    .from('organizations')
-    .select('*')
-    .eq('id', id)
+    .from("organizations")
+    .select("*")
+    .eq("id", id)
     .single();
-  
-  if (error) throw new NotFoundError('Organization');
+
+  if (error) throw new NotFoundError("Organization");
   return data;
 };
 ```
 
 ### RLS-First Approach
+
 - **No permission checks in TypeScript** - All authorization is handled by PostgreSQL Row Level Security
 - Models should only check if a user is authenticated, not their permissions
 - Trust the database to filter data based on RLS policies
@@ -98,6 +105,7 @@ export const POST = createValidatedApiHandler(
 ## Response Helpers
 
 Use standardized responses from `src/lib/server/api/response.ts`:
+
 - `successResponse(data)` - 200 OK
 - `createdResponse(data)` - 201 Created
 - `noContentResponse()` - 204 No Content
@@ -107,6 +115,7 @@ Use standardized responses from `src/lib/server/api/response.ts`:
 ## Error Handling
 
 Always use error classes from `src/lib/errors/*`:
+
 - `NotFoundError` - Resource not found
 - `ValidationError` - Input validation failed
 - `UnauthorizedError` - Not authenticated
@@ -123,11 +132,12 @@ Errors are automatically mapped to proper HTTP status codes by `throwApiError`.
 ## Validation
 
 Use Zod schemas from `src/lib/schemas/*` for all input validation:
+
 ```typescript
 // Define schema
 export const createOrganizationSchema = z.object({
   name: z.string().min(1).max(100),
-  slug: z.string().regex(/^[a-z0-9-]+$/)
+  slug: z.string().regex(/^[a-z0-9-]+$/),
 });
 
 // Use in handler
@@ -142,6 +152,7 @@ export const POST = createValidatedApiHandler(
 ## File Handling
 
 For file operations, use the `FileUploadService`:
+
 ```typescript
 const uploadService = new FileUploadService(ctx);
 const result = await uploadService.uploadFile(file, orgId);
@@ -150,12 +161,13 @@ const result = await uploadService.uploadFile(file, orgId);
 ## Rate Limiting
 
 Apply rate limiting using the helper:
+
 ```typescript
 export const POST = createApiHandler(async ({ request, locals }) => {
   await checkRateLimit(request, {
     points: 10,
     duration: 60,
-    blockDuration: 60
+    blockDuration: 60,
   });
   // ... rest of handler
 });
@@ -173,34 +185,31 @@ export const actions = {
   myAction: createActionHandler(async ({ request, locals, ctx }) => {
     // ctx is locals cast to BaseContext
     const data = await myModelFunction(ctx);
-    throw redirect(303, '/success');
-  })
+    throw redirect(303, "/success");
+  }),
 };
 
 // Authenticated action
 export const actions = {
-  myAction: createAuthenticatedActionHandler(async ({ ctx }) => {
+  myAction: createAuthenticatedActionHandler(async (event) => {
     // ctx includes user, throws if not authenticated
-    await updateUserProfile(ctx, data);
+    await updateUserProfile(event, data);
     return actionSuccess({ updated: true });
-  })
+  }),
 };
 
 // With validation
 const mySchema = z.object({
   name: z.string().min(1),
-  email: z.string().email()
+  email: z.string().email(),
 });
 
 export const actions = {
-  myAction: createValidatedActionHandler(
-    mySchema,
-    async ({ body, ctx }) => {
-      // body is validated and typed
-      await createThing(ctx, body);
-      throw redirect(303, '/things');
-    }
-  )
+  myAction: createValidatedActionHandler(mySchema, async ({ body, ctx }) => {
+    // body is validated and typed
+    await createThing(ctx, body);
+    throw redirect(303, "/things");
+  }),
 };
 
 // Authenticated with validation
@@ -212,7 +221,7 @@ export const actions = {
       await createUserThing(ctx, body);
       return actionSuccess({ created: true });
     }
-  )
+  ),
 };
 ```
 
@@ -229,12 +238,12 @@ export const actions = {
 export const actions = {
   upload: createAuthenticatedActionHandler(async ({ ctx, rawFormData }) => {
     const { fields, files } = await parseFormDataWithFiles(rawFormData);
-    
+
     if (files.document) {
       const result = await uploadFile(ctx, files.document);
       return actionSuccess(result);
     }
-  })
+  }),
 };
 ```
 
@@ -249,6 +258,7 @@ export const actions = {
 # Best Practices
 
 1. **Keep API routes thin** - They should only:
+
    - Create the appropriate context
    - Call model functions
    - Return standardized responses
@@ -256,23 +266,25 @@ export const actions = {
 2. **Business logic in models** - All business logic belongs in `src/lib/models/*`
 
 3. **Parallel operations** - Use `Promise.all()` for concurrent operations:
+
    ```typescript
    const [org, members] = await Promise.all([
      getOrganization(ctx, orgId),
-     getOrganizationMembers(ctx, orgId)
+     getOrganizationMembers(ctx, orgId),
    ]);
    ```
 
 4. **Error context** - Provide context when throwing errors:
+
    ```typescript
    throw new OperationError(
-     'Failed to create organization',
-     'database.insert',
+     "Failed to create organization",
+     "database.insert",
      { orgId, errorCode: error.code }
    );
    ```
 
 5. **Logging** - Middleware automatically logs requests. Add additional logging for debugging:
    ```typescript
-   console.error('[Organization] Creation failed:', error);
+   console.error("[Organization] Creation failed:", error);
    ```

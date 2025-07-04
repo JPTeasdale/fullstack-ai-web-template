@@ -3,12 +3,12 @@
 	import Sidebar from '$lib/components/Sidebar/Sidebar.svelte';
 	import Chat from '$lib/ai/svelte/components/chat/Chat.svelte';
 	import { AiConversationStore } from '$lib/ai/svelte/store/createAiStore';
-	import { URL_API_SIGNOUT, URL_DASHBOARD, URL_ORGANIZATIONS } from '$lib/url';
-	import { House } from '@lucide/svelte';
+	import { URL_API_SIGNOUT, URL_DASHBOARD, URL_ORGANIZATIONS, URL_USER_INVITATIONS } from '$lib/url';
+	import { House, Mail } from '@lucide/svelte';
 	import SidebarLink from '$lib/components/Sidebar/SidebarLink.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { parse } from 'partial-json';
-	import { type TodoExampleListPartial } from '$lib/ai/schemas/todo_example_schema';
+	import { type TodoExampleListPartial } from '$lib/schemas/todo_example_schema.js';
 	import { formatDate } from '$lib/utils/format';
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import FullLayout from '$lib/components/Layout/FullLayout.svelte';
@@ -33,7 +33,7 @@
 
 	const items = $derived($conversation);
 	const error = $derived($conversationError);
-	
+
 	const handleSendMessage = async (message: string) => {
 		await sendMessage('/api/v1/llm/handle-turn', message);
 	};
@@ -57,6 +57,7 @@
 	{/snippet}
 	{#snippet sideNavItems(isExpanded)}
 		<SidebarLink {isExpanded} href={URL_DASHBOARD} label="Dashboard" Icon={House} />
+		<SidebarLink {isExpanded} href={URL_USER_INVITATIONS} label="Invitations" Icon={Mail} />
 	{/snippet}
 	{#snippet chat()}
 		<Chat onSendMessage={handleSendMessage} generating={$generating} {items} {error}>

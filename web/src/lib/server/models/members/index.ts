@@ -1,5 +1,5 @@
-import { NotFoundError, OperationError, ConflictError } from '$lib/errors';
-import type { OrgContext } from '$lib/models/context';
+import { NotFoundError, OperationError, ConflictError } from '$lib/server/errors';
+import type { AuthenticatedEvent } from '$lib/server/api/context';
 import type { Database } from '$lib/types/generated/supabase.types';
 
 type MemberRole = Database['public']['Enums']['member_role'];
@@ -8,8 +8,8 @@ type MemberRole = Database['public']['Enums']['member_role'];
  * Get all members of an organization
  * RLS ensures user can only see members of organizations they belong to
  */
-export const getOrganizationMembers = async (ctx: OrgContext) => {
-	const { supabase, organizationId } = ctx;
+export const getOrganizationMembers = async (event: AuthenticatedEvent, organizationId: string) => {
+	const { supabase } = event.locals;
 
 	const { data: members, error } = await supabase
 		.from('organization_members')
@@ -41,8 +41,12 @@ export const getOrganizationMembers = async (ctx: OrgContext) => {
 /**
  * Get a specific member by ID
  */
-export const getMember = async (ctx: OrgContext, memberId: string) => {
-	const { supabase, organizationId } = ctx;
+export const getMember = async (
+	event: AuthenticatedEvent,
+	organizationId: string,
+	memberId: string
+) => {
+	const { supabase } = event.locals;
 
 	const { data: member, error } = await supabase
 		.from('organization_members')
@@ -80,8 +84,13 @@ export const getMember = async (ctx: OrgContext, memberId: string) => {
  * Update a member's role
  * RLS ensures only admins/owners can update roles
  */
-export const updateMemberRole = async (ctx: OrgContext, memberId: string, newRole: MemberRole) => {
-	const { supabase, organizationId } = ctx;
+export const updateMemberRole = async (
+	event: AuthenticatedEvent,
+	organizationId: string,
+	memberId: string,
+	newRole: MemberRole
+) => {
+	const { supabase } = event.locals;
 
 	const { error } = await supabase
 		.from('organization_members')
@@ -104,8 +113,12 @@ export const updateMemberRole = async (ctx: OrgContext, memberId: string, newRol
  * Remove a member from an organization
  * RLS ensures only admins/owners can remove members
  */
-export const removeMember = async (ctx: OrgContext, memberId: string) => {
-	const { supabase, organizationId } = ctx;
+export const removeMember = async (
+	event: AuthenticatedEvent,
+	organizationId: string,
+	memberId: string
+) => {
+	const { supabase } = event.locals;
 
 	const { error } = await supabase
 		.from('organization_members')
@@ -128,8 +141,13 @@ export const removeMember = async (ctx: OrgContext, memberId: string) => {
  * Add a member directly (without invitation)
  * RLS ensures only admins/owners can add members
  */
-export const addMember = async (ctx: OrgContext, userId: string, role: MemberRole = 'member') => {
-	const { supabase, organizationId, user } = ctx;
+export const addMember = async (
+	event: AuthenticatedEvent,
+	organizationId: string,
+	userId: string,
+	role: MemberRole = 'member'
+) => {
+	const { supabase, user } = event.locals;
 
 	// Check if user is already a member
 	const { data: existing } = await supabase

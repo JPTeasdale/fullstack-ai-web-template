@@ -11,6 +11,7 @@ import type OpenAI from 'openai';
 import type { SESClient } from '@aws-sdk/client-ses';
 import type { DurableObjectNamespace, DurableObjectStub } from '@cloudflare/workers-types';
 import type { RateLimiter } from '$lib/durable_objects/RateLimiter';
+import type { EmailService } from '$lib/server/services/emailService';
 
 declare global {
 	namespace App {
@@ -23,8 +24,7 @@ declare global {
 			user: User | null;
 			posthog: PostHog;
 			openai: OpenAI;
-			ses: SESClient;
-			r2: R2Bucket;
+			emailService: EmailService;
 			trace: {
 				requestId: string;
 				organizationId?: string;

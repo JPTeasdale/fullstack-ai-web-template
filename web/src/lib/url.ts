@@ -9,6 +9,8 @@ export const URL_API_SIGNOUT = `${URL_API_V1_ROOT}/signout`;
 export const URL_DASHBOARD = '/dashboard';
 export const URL_ORGANIZATIONS = '/organizations';
 
+export const URL_USER_INVITATIONS = `${URL_DASHBOARD}/invitations`;
+
 export function urlOrganization(orgId: string) {
 	return `${URL_ORGANIZATIONS}/${orgId}`;
 }

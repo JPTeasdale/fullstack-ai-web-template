@@ -21,7 +21,7 @@
 ></div>
 
 <div
-	class={`transition-width fixed top-0 bottom-0 left-0 flex h-screen flex-col border-r border-gray-200 bg-white pt-20 duration-300 ease-in-out ${
+	class={`transition-width fixed top-0 bottom-0 left-0 flex flex-col border-r border-gray-200 bg-white pt-20 duration-300 ease-in-out ${
 		isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH
 	}`}
 >

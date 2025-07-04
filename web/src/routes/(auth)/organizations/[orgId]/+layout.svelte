@@ -89,12 +89,7 @@
 		/>
 	{/snippet}
 	{#snippet chat()}
-		<Chat
-			onSendMessage={handleSendMessage}
-			generating={$generating}
-			{items}
-			{error}
-		/>
+		<Chat onSendMessage={handleSendMessage} generating={$generating} {items} {error} />
 	{/snippet}
 	{@render children()}
 </FullLayout>

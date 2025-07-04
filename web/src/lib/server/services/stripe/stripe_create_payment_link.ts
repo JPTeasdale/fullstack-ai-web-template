@@ -3,7 +3,7 @@ import {
 	fetchPriceId,
 	makeSubscriptionMetadata,
 	type AppSubscriptionType
-} from '$lib/server/clients/stripe/stripe_client';
+} from '$lib/server/services/stripe/stripe_client';
 import { URL_CONFIRM_SUBSCRIPTION_STRIPE_TEMPLATE, URL_DASHBOARD } from '$lib/url';
 import type { ServerLoadEvent } from '@sveltejs/kit';
 

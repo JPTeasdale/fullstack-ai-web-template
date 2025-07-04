@@ -1,17 +1,32 @@
-import { UnauthorizedError, ValidationError, RateLimitError, NotFoundError } from '$lib/errors';
+import { ValidationError } from '$lib/server/errors';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { z } from 'zod';
-import { addMilliseconds, differenceInMilliseconds, isAfter, subMilliseconds } from 'date-fns';
-import type { M } from 'vitest/dist/chunks/reporters.d.DL9pg5DB.js';
+
+import { assertAuthenticated, extractOrganizationId, type AuthenticatedEvent } from './context';
 
 /**
  * Create an API handler with automatic error handling
  */
-export function createApiHandler<T = any>(
-	handler: (event: RequestEvent & { validated?: T }) => Promise<Response>
+export function createApiHandler(handler: (event: AuthenticatedEvent) => Promise<Response>) {
+	return async (event: RequestEvent) => {
+		assertAuthenticated(event);
+		return await handler(event);
+	};
+}
+
+/**
+ * Create an API handler with automatic error handling
+ */
+export function createOrganizationApiHandler(
+	handler: (event: AuthenticatedEvent & { organizationId: string }) => Promise<Response>
 ) {
 	return async (event: RequestEvent) => {
-		return await handler(event);
+		assertAuthenticated(event);
+		const organizationId = extractOrganizationId(event);
+		await event.locals.supabase.rpc('set_current_organization_id', {
+			org_id: organizationId
+		});
+		return await handler({ ...event, organizationId });
 	};
 }
 
@@ -20,7 +35,7 @@ export function createApiHandler<T = any>(
  */
 export function createValidatedApiHandler<T extends z.ZodType>(
 	schema: T,
-	handler: (event: RequestEvent & { validated: z.infer<T> }) => Promise<Response>
+	handler: (event: AuthenticatedEvent & { validated: z.infer<T> }) => Promise<Response>
 ) {
 	return createApiHandler(async (event) => {
 		const data = await event.request.json();
@@ -42,16 +57,31 @@ export function createValidatedApiHandler<T extends z.ZodType>(
 }
 
 /**
- * Require user authentication
+ * Create an API handler with request validation
  */
-export async function requireAuth(event: RequestEvent) {
-	const { user } = event.locals;
+export function createValidatedOrganizationApiHandler<T extends z.ZodType>(
+	schema: T,
+	handler: (
+		event: AuthenticatedEvent & { organizationId: string; validated: z.infer<T> }
+	) => Promise<Response>
+) {
+	return createOrganizationApiHandler(async (event) => {
+		const data = await event.request.json();
+		const result = schema.safeParse(data);
 
-	if (!user) {
-		throw new UnauthorizedError();
-	}
+		if (!result.success) {
+			const errors: Record<string, string[]> = {};
+			result.error.errors.forEach((err) => {
+				const path = err.path.join('.');
+				if (!errors[path]) errors[path] = [];
+				errors[path].push(err.message);
+			});
 
-	return user;
+			throw new ValidationError('Validation failed', errors);
+		}
+
+		return handler({ ...event, validated: result.data });
+	});
 }
 
 /**

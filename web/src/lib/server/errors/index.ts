@@ -86,7 +86,9 @@ export class RateLimitError extends Error {
 		public readonly resetTime: string,
 		public readonly capacity: number
 	) {
-		super(`Rate limit exceeded for ${resource}. Try again in ${formatDistanceToNow(new Date(resetTime))}`);
+		super(
+			`Rate limit exceeded for ${resource}. Try again in ${formatDistanceToNow(new Date(resetTime))}`
+		);
 		this.name = 'RateLimitError';
 	}
 }

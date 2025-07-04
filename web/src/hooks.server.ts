@@ -4,10 +4,10 @@ import { hookDisableDevTools } from '$lib/server/svelte_handlers/hook_disable_de
 import { hookSupabaseSession } from '$lib/server/svelte_handlers/hook_supabase';
 import { hookRedirects } from '$lib/server/svelte_handlers/hook_redirects';
 import { hookClients } from '$lib/server/svelte_handlers/hook_clients';
-import { getPosthog } from '$lib/server/clients/posthog';
+import { getPosthog } from '$lib/server/services/posthog';
 
 import type { HandleServerError } from '@sveltejs/kit';
-import { throwApiError } from '$lib/errors';
+import { throwApiError } from '$lib/server/errors';
 
 export const handleError: HandleServerError = async ({ error, status, event, message }) => {
 	const requestId = (event.locals as any).requestId || 'unknown';

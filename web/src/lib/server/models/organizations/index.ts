@@ -1,18 +1,18 @@
-import { NotFoundError, OperationError, ConflictError } from '$lib/errors';
-import type { AuthenticatedContext, OrgContext } from '$lib/models/context';
+import { NotFoundError, OperationError, ConflictError } from '$lib/server/errors';
+import type { AuthenticatedEvent } from '$lib/server/api/context';
 import type { CreateOrganizationData, UpdateOrganizationData } from '$lib/schemas/organizations';
 
 /**
  * Get an organization by ID
  * RLS ensures user can only access organizations they're a member of
  */
-export const getOrganization = async (ctx: AuthenticatedContext, id: string) => {
-	const { supabase } = ctx;
+export const getOrganization = async (event: AuthenticatedEvent, organizationId: string) => {
+	const { supabase } = event.locals;
 
 	const { data: organization, error } = await supabase
 		.from('organizations')
 		.select('*')
-		.eq('id', id)
+		.eq('id', organizationId)
 		.single();
 
 	if (error) {
@@ -20,7 +20,7 @@ export const getOrganization = async (ctx: AuthenticatedContext, id: string) => 
 			throw new NotFoundError('Organization');
 		}
 		throw new OperationError(`Failed to fetch organization: ${error.message}`, 'database.fetch', {
-			orgId: id,
+			organizationId,
 			errorCode: error.code
 		});
 	}
@@ -32,8 +32,8 @@ export const getOrganization = async (ctx: AuthenticatedContext, id: string) => 
  * Get all organizations for the current user
  * RLS automatically filters to only organizations the user is a member of
  */
-export const getUserOrganizations = async (ctx: AuthenticatedContext) => {
-	const { supabase, user } = ctx;
+export const getUserOrganizations = async (event: AuthenticatedEvent) => {
+	const { supabase, user } = event.locals;
 
 	const { data: organizations, error } = await supabase
 		.from('organizations')
@@ -65,10 +65,10 @@ export const getUserOrganizations = async (ctx: AuthenticatedContext) => {
  * Database function handles creating the organization and adding the user as owner
  */
 export const createOrganization = async (
-	ctx: AuthenticatedContext,
+	event: AuthenticatedEvent,
 	data: CreateOrganizationData
 ) => {
-	const { supabase } = ctx;
+	const { supabase } = event.locals;
 
 	// Generate slug from name
 	const slug = data.name
@@ -115,8 +115,12 @@ export const createOrganization = async (
  * Update an organization
  * RLS ensures only admins/owners can update
  */
-export const updateOrganization = async (ctx: OrgContext, data: UpdateOrganizationData) => {
-	const { supabase, organizationId } = ctx;
+export const updateOrganization = async (
+	event: AuthenticatedEvent,
+	organizationId: string,
+	data: UpdateOrganizationData
+) => {
+	const { supabase } = event.locals;
 
 	const { error } = await supabase
 		.from('organizations')
@@ -140,8 +144,8 @@ export const updateOrganization = async (ctx: OrgContext, data: UpdateOrganizati
  * Delete an organization
  * RLS ensures only owners can delete
  */
-export const deleteOrganization = async (ctx: OrgContext) => {
-	const { supabase, organizationId } = ctx;
+export const deleteOrganization = async (event: AuthenticatedEvent, organizationId: string) => {
+	const { supabase } = event.locals;
 
 	const { error } = await supabase.from('organizations').delete().eq('id', organizationId);
 

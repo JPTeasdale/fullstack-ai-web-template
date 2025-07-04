@@ -20,15 +20,17 @@
 </script>
 
 <div class="flex h-screen grow">
-	<div class="flex h-screen max-h-screen min-h-screen max-w-screen flex-1 flex-col bg-gray-50">
+	<div
+		class="flex h-screen max-h-screen min-h-screen max-w-screen flex-1 flex-col overflow-hidden bg-gray-50"
+	>
 		{#if header}
 			{@render header()}
 		{/if}
-		<div class="flex flex-1 sm:pb-0">
+		<div class="flex max-h-full flex-1 overflow-hidden pt-18 sm:pt-20 sm:pb-0">
 			{#if sideNavItems}
 				<Sidebar items={sideNavItems} />
 			{/if}
-			<main class="flex w-full flex-1 p-4 pb-16 sm:pb-4">
+			<main class="flex max-h-full w-full flex-1 overflow-scroll p-10">
 				{@render children()}
 			</main>
 			{#if chat}

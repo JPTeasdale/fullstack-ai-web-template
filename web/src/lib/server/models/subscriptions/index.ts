@@ -1,5 +1,5 @@
-import { NotFoundError, OperationError, ConfigurationError } from '$lib/errors';
-import type { AuthenticatedContext, OrgContext } from '$lib/models/context';
+import { NotFoundError, OperationError, ConfigurationError } from '$lib/server/errors';
+import type { AuthenticatedEvent } from '$lib/server/api/context';
 import type { CreateSubscriptionData } from '$lib/schemas/subscriptions';
 import {
 	getStripe,
@@ -7,15 +7,18 @@ import {
 	getSubscriptionMetadata,
 	convertStripeSubscription,
 	type AppSubscriptionType
-} from '$lib/server/clients/stripe/stripe_client';
+} from '$lib/server/services/stripe/stripe_client';
 import { urlOrganizationSubscription } from '$lib/url';
 
 /**
  * Get organization subscription with price information
  * RLS ensures user can only access subscriptions for organizations they're members of
  */
-export const getOrganizationSubscription = async (ctx: OrgContext) => {
-	const { supabase, organizationId } = ctx;
+export const getOrganizationSubscription = async (
+	event: AuthenticatedEvent,
+	organizationId: string
+) => {
+	const { supabase } = event.locals;
 
 	// Fetch organization subscription
 	const { data: subscription, error } = await supabase
@@ -26,11 +29,10 @@ export const getOrganizationSubscription = async (ctx: OrgContext) => {
 		.maybeSingle();
 
 	if (error) {
-		throw new OperationError(
-			`Failed to fetch subscription: ${error.message}`,
-			'database.fetch',
-			{ orgId: organizationId, errorCode: error.code }
-		);
+		throw new OperationError(`Failed to fetch subscription: ${error.message}`, 'database.fetch', {
+			organizationId: organizationId,
+			errorCode: error.code
+		});
 	}
 
 	// Get price information from Stripe if subscription exists
@@ -62,9 +64,18 @@ export const getOrganizationSubscription = async (ctx: OrgContext) => {
  * Process successful checkout session
  * Updates subscription status after successful Stripe checkout
  */
-export const processCheckoutSuccess = async (ctx: AuthenticatedContext, checkoutSessionId: string) => {
-	const { supabaseAdmin } = ctx;
-	
+export const processCheckoutSuccess = async (
+	event: AuthenticatedEvent,
+	{
+		organizationId,
+		checkoutSessionId
+	}: {
+		organizationId: string;
+		checkoutSessionId: string;
+	}
+) => {
+	const { supabaseAdmin } = event.locals;
+
 	try {
 		const stripe = getStripe();
 		const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
@@ -91,11 +102,9 @@ export const processCheckoutSuccess = async (ctx: AuthenticatedContext, checkout
 		}
 	} catch (err) {
 		console.error('[Subscription] Error processing checkout success:', err);
-		throw new OperationError(
-			'Failed to process checkout success',
-			'stripe.checkout',
-			{ checkoutSessionId }
-		);
+		throw new OperationError('Failed to process checkout success', 'stripe.checkout', {
+			checkoutSessionId
+		});
 	}
 };
 
@@ -104,12 +113,11 @@ export const processCheckoutSuccess = async (ctx: AuthenticatedContext, checkout
  * Returns the checkout URL for redirection
  */
 export const createSubscription = async (
-	ctx: AuthenticatedContext,
-	orgId: string,
-	data: CreateSubscriptionData,
-	baseUrl: string
+	event: AuthenticatedEvent,
+	{ organizationId, ...data }: CreateSubscriptionData & { organizationId: string }
 ) => {
-	const { supabaseAdmin, user } = ctx;
+	const { supabaseAdmin, user } = event.locals;
+	const baseUrl = event.url.origin;
 
 	try {
 		const stripe = getStripe();
@@ -119,7 +127,7 @@ export const createSubscription = async (
 			.from('subscriptions')
 			.upsert(
 				{
-					organization_id: orgId,
+					organization_id: organizationId,
 					status: 'incomplete'
 				},
 				{ onConflict: 'organization_id' }
@@ -131,7 +139,7 @@ export const createSubscription = async (
 			throw new OperationError(
 				`Failed to create subscription record: ${error?.message}`,
 				'database.insert',
-				{ orgId, errorCode: error?.code }
+				{ organizationId, errorCode: error?.code }
 			);
 		}
 
@@ -151,8 +159,8 @@ export const createSubscription = async (
 					quantity: 1
 				}
 			],
-			success_url: `${baseUrl}${urlOrganizationSubscription(orgId)}?payment_intent={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${baseUrl}${urlOrganizationSubscription(orgId)}`,
+			success_url: `${baseUrl}${urlOrganizationSubscription(organizationId)}?payment_intent={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${baseUrl}${urlOrganizationSubscription(organizationId)}`,
 			subscription_data: {
 				metadata: {
 					appSubscriptionId: subscription.id,
@@ -167,9 +175,15 @@ export const createSubscription = async (
 
 		return { checkoutUrl: session.url };
 	} catch (err) {
-		if (err instanceof Error && err.name !== 'OperationError' && err.name !== 'ConfigurationError') {
+		if (
+			err instanceof Error &&
+			err.name !== 'OperationError' &&
+			err.name !== 'ConfigurationError'
+		) {
 			console.error('[Subscription] Error creating subscription:', err);
-			throw new OperationError('Failed to create subscription', 'stripe.checkout', { orgId });
+			throw new OperationError('Failed to create subscription', 'stripe.checkout', {
+				organizationId
+			});
 		}
 		throw err;
 	}
@@ -179,8 +193,8 @@ export const createSubscription = async (
  * Cancel subscription at period end
  * Does not immediately cancel but marks for cancellation
  */
-export const cancelSubscription = async (ctx: OrgContext) => {
-	const { supabase, supabaseAdmin, organizationId } = ctx;
+export const cancelSubscription = async (event: AuthenticatedEvent, organizationId: string) => {
+	const { supabase, supabaseAdmin } = event.locals;
 
 	// Get subscription
 	const { data: subscription } = await supabase
@@ -195,7 +209,7 @@ export const cancelSubscription = async (ctx: OrgContext) => {
 
 	try {
 		const stripe = getStripe();
-		
+
 		// Cancel at period end instead of immediately
 		const stripeSubscription = await stripe.subscriptions.update(
 			subscription.stripe_subscription_id,
@@ -216,7 +230,7 @@ export const cancelSubscription = async (ctx: OrgContext) => {
 			throw new OperationError(
 				`Failed to update subscription after cancellation: ${error.message}`,
 				'database.update',
-				{ orgId: organizationId, errorCode: error.code }
+				{ organizationId: organizationId, errorCode: error.code }
 			);
 		}
 
@@ -224,8 +238,8 @@ export const cancelSubscription = async (ctx: OrgContext) => {
 	} catch (err) {
 		if (err instanceof Error && err.name !== 'OperationError') {
 			console.error('[Subscription] Error canceling subscription:', err);
-			throw new OperationError('Failed to cancel subscription', 'stripe.subscription', { 
-				orgId: organizationId 
+			throw new OperationError('Failed to cancel subscription', 'stripe.subscription', {
+				organizationId: organizationId
 			});
 		}
 		throw err;
@@ -236,8 +250,8 @@ export const cancelSubscription = async (ctx: OrgContext) => {
  * Reactivate a canceled subscription
  * Removes the cancellation flag
  */
-export const reactivateSubscription = async (ctx: OrgContext) => {
-	const { supabase, supabaseAdmin, organizationId } = ctx;
+export const reactivateSubscription = async (event: AuthenticatedEvent, organizationId: string) => {
+	const { supabase, supabaseAdmin } = event.locals;
 
 	// Get subscription
 	const { data: subscription } = await supabase
@@ -252,7 +266,7 @@ export const reactivateSubscription = async (ctx: OrgContext) => {
 
 	try {
 		const stripe = getStripe();
-		
+
 		// Remove cancellation
 		const stripeSubscription = await stripe.subscriptions.update(
 			subscription.stripe_subscription_id,
@@ -273,7 +287,7 @@ export const reactivateSubscription = async (ctx: OrgContext) => {
 			throw new OperationError(
 				`Failed to update subscription after reactivation: ${error.message}`,
 				'database.update',
-				{ orgId: organizationId, errorCode: error.code }
+				{ organizationId: organizationId, errorCode: error.code }
 			);
 		}
 
@@ -281,8 +295,8 @@ export const reactivateSubscription = async (ctx: OrgContext) => {
 	} catch (err) {
 		if (err instanceof Error && err.name !== 'OperationError') {
 			console.error('[Subscription] Error reactivating subscription:', err);
-			throw new OperationError('Failed to reactivate subscription', 'stripe.subscription', { 
-				orgId: organizationId 
+			throw new OperationError('Failed to reactivate subscription', 'stripe.subscription', {
+				organizationId: organizationId
 			});
 		}
 		throw err;
@@ -293,8 +307,12 @@ export const reactivateSubscription = async (ctx: OrgContext) => {
  * Create session for updating payment method
  * Returns the checkout URL for payment method update
  */
-export const createPaymentUpdateSession = async (ctx: OrgContext, baseUrl: string) => {
-	const { supabase, organizationId } = ctx;
+export const createPaymentUpdateSession = async (
+	event: AuthenticatedEvent,
+	organizationId: string
+) => {
+	const { supabase } = event.locals;
+	const baseUrl = event.url.origin;
 
 	// Get subscription
 	const { data: subscription } = await supabase
@@ -309,7 +327,7 @@ export const createPaymentUpdateSession = async (ctx: OrgContext, baseUrl: strin
 
 	try {
 		const stripe = getStripe();
-		
+
 		// Create a session for updating payment method
 		const session = await stripe.checkout.sessions.create({
 			mode: 'setup',
@@ -326,10 +344,10 @@ export const createPaymentUpdateSession = async (ctx: OrgContext, baseUrl: strin
 	} catch (err) {
 		if (err instanceof Error && err.name !== 'OperationError') {
 			console.error('[Subscription] Error creating payment update session:', err);
-			throw new OperationError('Failed to create payment update session', 'stripe.checkout', { 
-				orgId: organizationId 
+			throw new OperationError('Failed to create payment update session', 'stripe.checkout', {
+				organizationId: organizationId
 			});
 		}
 		throw err;
 	}
-}; 
+};

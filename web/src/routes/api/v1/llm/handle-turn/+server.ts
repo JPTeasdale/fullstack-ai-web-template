@@ -1,4 +1,4 @@
-import { formatTodoList } from '$lib/ai/schemas/todo_example_schema';
+import { formatTodoList } from '$lib/schemas/todo_example_schema';
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
 import { aiRequestSchema } from '$lib/schemas/ai';
 import { createValidatedApiHandler } from '$lib/server/api/helpers';

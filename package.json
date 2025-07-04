@@ -24,7 +24,7 @@
     "glob": "^11.0.3",
     "inquirer": "^8.2.6",
     "jsonc-parser": "^3.3.1",
-    "supabase": "^2.26.9",
+    "supabase": "^2.30.4",
     "tsx": "^4.0.0",
     "typescript": "^5.3.3",
     "wrangler": "^4.20.0",

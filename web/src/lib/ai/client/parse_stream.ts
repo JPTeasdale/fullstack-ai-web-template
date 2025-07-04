@@ -18,7 +18,11 @@ export async function parseStream(
 
 	if (!res.ok) {
 		const error = await res.json();
-		console.log('Error parsing stream', { error, message: error?.message, errorStr: errorStr(error) });
+		console.log('Error parsing stream', {
+			error,
+			message: error?.message,
+			errorStr: errorStr(error)
+		});
 
 		return onError(new Error(error?.message || 'Unknown error'));
 	}

@@ -94,7 +94,7 @@ export function streamResponse(stream: ReadableStream, contentType = 'applicatio
 /**
  * File download response
  */
-export function fileResponse(
+export function fileDownloadResponse(
 	body: ReadableStream | ArrayBuffer | string,
 	filename: string,
 	contentType: string,

@@ -1,7 +1,6 @@
 import { fail, isRedirect, type RequestEvent } from '@sveltejs/kit';
 import { z, type ZodSchema } from 'zod';
-import type { BaseContext, AuthenticatedContext } from '$lib/models/context';
-import { errorStr } from '$lib/utils/error';
+import { assertAuthenticated, type AuthenticatedEvent } from '$lib/server/api/context';
 import {
 	UnauthorizedError,
 	ValidationError,
@@ -13,12 +12,7 @@ import {
 	PayloadTooLargeError,
 	ConfigurationError,
 	ForbiddenError
-} from '$lib/errors';
-
-// Action handler types
-type ActionContext = RequestEvent & {
-	locals: App.Locals;
-};
+} from '$lib/server/errors';
 
 type ActionResult<T = any> = {
 	success?: boolean;
@@ -29,25 +23,21 @@ type ActionResult<T = any> = {
 	message?: string;
 };
 
-type ActionHandler<T = any> = (
-	context: ActionContext & { ctx: BaseContext }
-) => Promise<ActionResult<T> | Response>;
+type ActionHandler<T = any> = (context: RequestEvent) => Promise<ActionResult<T> | Response>;
 
 type AuthenticatedActionHandler<T = any> = (
-	context: ActionContext & { ctx: AuthenticatedContext }
+	context: AuthenticatedEvent
 ) => Promise<ActionResult<T> | Response>;
 
 type ValidatedActionHandler<TSchema extends ZodSchema, T = any> = (
-	context: ActionContext & {
-		ctx: BaseContext;
+	context: RequestEvent & {
 		body: z.infer<TSchema>;
 		rawFormData: FormData;
 	}
 ) => Promise<ActionResult<T> | Response>;
 
 type AuthenticatedValidatedActionHandler<TSchema extends ZodSchema, T = any> = (
-	context: ActionContext & {
-		ctx: AuthenticatedContext;
+	context: AuthenticatedEvent & {
 		body: z.infer<TSchema>;
 		rawFormData: FormData;
 	}
@@ -137,11 +127,10 @@ function mapErrorToFailure(error: unknown, values?: Record<string, any>): Return
  */
 export function createActionHandler<T = any>(
 	handler: ActionHandler<T>
-): (event: ActionContext) => Promise<ReturnType<typeof fail> | Response> {
+): (event: RequestEvent) => Promise<ReturnType<typeof fail> | Response> {
 	return async (event) => {
 		try {
-			const ctx = event.locals as BaseContext;
-			const result = await handler({ ...event, ctx });
+			const result = await handler(event);
 
 			// If handler returns a Response (like redirect), pass it through
 			if (result instanceof Response) {
@@ -163,15 +152,11 @@ export function createActionHandler<T = any>(
  */
 export function createAuthenticatedActionHandler<T = any>(
 	handler: AuthenticatedActionHandler<T>
-): (event: ActionContext) => Promise<ReturnType<typeof fail> | Response> {
+): (event: RequestEvent) => Promise<ReturnType<typeof fail> | Response> {
 	return async (event) => {
 		try {
-			if (!event.locals.user) {
-				throw new UnauthorizedError('Please sign in to continue');
-			}
-
-			const ctx = { ...event.locals, user: event.locals.user } as AuthenticatedContext;
-			const result = await handler({ ...event, ctx });
+			assertAuthenticated(event);
+			const result = await handler(event);
 
 			if (result instanceof Response) {
 				return result;
@@ -192,10 +177,9 @@ export function createAuthenticatedActionHandler<T = any>(
 export function createValidatedActionHandler<TSchema extends ZodSchema, T = any>(
 	schema: TSchema,
 	handler: ValidatedActionHandler<TSchema, T>
-): (event: ActionContext) => Promise<ReturnType<typeof fail> | Response> {
+): (event: RequestEvent) => Promise<ReturnType<typeof fail> | Response> {
 	return async (event) => {
 		try {
-			const ctx = event.locals as BaseContext;
 			const formData = await event.request.formData();
 
 			// Convert FormData to object for validation
@@ -223,7 +207,6 @@ export function createValidatedActionHandler<TSchema extends ZodSchema, T = any>
 
 			const result = await handler({
 				...event,
-				ctx,
 				body: parseResult.data,
 				rawFormData: formData
 			});
@@ -247,16 +230,11 @@ export function createValidatedActionHandler<TSchema extends ZodSchema, T = any>
 export function createAuthenticatedValidatedActionHandler<TSchema extends ZodSchema, T = any>(
 	schema: TSchema,
 	handler: AuthenticatedValidatedActionHandler<TSchema, T>
-): (event: ActionContext) => Promise<ReturnType<typeof fail> | Response> {
+): (event: RequestEvent) => Promise<ReturnType<typeof fail> | Response> {
 	return async (event) => {
 		try {
-			if (!event.locals.user) {
-				throw new UnauthorizedError('Please sign in to continue');
-			}
-
-			const ctx = { ...event.locals, user: event.locals.user } as AuthenticatedContext;
+			assertAuthenticated(event);
 			const formData = await event.request.formData();
-
 			const rawData = Object.fromEntries(formData.entries());
 			const parseResult = schema.safeParse(rawData);
 
@@ -279,7 +257,6 @@ export function createAuthenticatedValidatedActionHandler<TSchema extends ZodSch
 
 			const result = await handler({
 				...event,
-				ctx,
 				body: parseResult.data,
 				rawFormData: formData
 			});

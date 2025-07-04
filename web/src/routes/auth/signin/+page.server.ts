@@ -3,7 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { URL_DASHBOARD } from '$lib/url';
 import { createValidatedActionHandler } from '$lib/server/actions/helpers';
 import { z } from 'zod';
-import { OperationError } from '$lib/errors';
+import { OperationError } from '$lib/server/errors';
 
 export const load: PageServerLoad = async ({ locals: { session } }) => {
 	if (session) {
@@ -17,9 +17,9 @@ const signinSchema = z.object({
 });
 
 export const actions: Actions = {
-	signin: createValidatedActionHandler(signinSchema, async ({ body, ctx, url }) => {
+	signin: createValidatedActionHandler(signinSchema, async ({ body, url, locals }) => {
 		const { email, password } = body;
-		const { supabase } = ctx;
+		const { supabase } = locals;
 
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email,

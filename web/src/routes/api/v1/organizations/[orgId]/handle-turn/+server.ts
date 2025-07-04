@@ -1,34 +1,30 @@
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
-import { getOrganization } from '$lib/models/organizations';
-import { requireAuth, createValidatedApiHandler } from '$lib/server/api/helpers';
-import type { AuthenticatedContext } from '$lib/models/context';
+import { getOrganization } from '$lib/server/models/organizations';
+import { createValidatedOrganizationApiHandler } from '$lib/server/api/helpers';
 import type { Tool } from 'openai/resources/responses/responses.mjs';
 import { aiRequestSchema } from '$lib/schemas/ai';
 import { checkOrganizationRateLimit } from '$lib/server/api/rate-limit';
 
-export const POST = createValidatedApiHandler(aiRequestSchema, async (event) => {
-	const { orgId } = event.params;
-
-	// Ensure user is authenticated
-	await requireAuth(event);
-
-	// Create context
-	const ctx: AuthenticatedContext = {
-		...event.locals,
-		user: event.locals.user!
-	};
+export const POST = createValidatedOrganizationApiHandler(aiRequestSchema, async (event) => {
+	const { organizationId } = event;
+	const { supabaseAdmin } = event.locals;
 
 	// Get organization using model function
-	const organization = await getOrganization(ctx, orgId!);
+	const organization = await getOrganization(event, organizationId);
+	const { data: privateOrganization } = await supabaseAdmin
+		.from('organization_private')
+		.select('openai_vector_store_id')
+		.eq('organization_id', organizationId)
+		.maybeSingle();
 
-	await checkOrganizationRateLimit(event, orgId!);
+	await checkOrganizationRateLimit(event, organizationId);
 
 	// Build tools array based on organization configuration
 	let tools: Tool[] = [];
-	if (organization.openai_vector_store_id) {
+	if (privateOrganization?.openai_vector_store_id) {
 		tools.push({
 			type: 'file_search',
-			vector_store_ids: [organization.openai_vector_store_id]
+			vector_store_ids: [privateOrganization.openai_vector_store_id]
 		});
 	}
 

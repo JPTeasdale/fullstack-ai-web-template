@@ -65,8 +65,14 @@ interface AuthEmailPayload {
 	email_data: AuthEmailData;
 }
 
+interface ConfirmationEmailData {
+	token_hash: string;
+	email_action_type: 'signup' | 'confirmation';
+	redirect_to: string;
+}
+
 // Wrap the confirmation URL in a login parameter to prevent the link from being invalidated by email client pre-fetching
-function generateConfirmationURL(baseUrl: string, email_data: AuthEmailData) {
+function generateConfirmationURL(baseUrl: string, email_data: ConfirmationEmailData) {
 	const confirmLink = `${baseUrl}${URL_VERIFY_MAGIC_LINK}?token_hash=${email_data.token_hash}&type=${email_data.email_action_type}&redirect_to=${email_data.redirect_to}`;
 	return `${baseUrl}${URL_VERIFY_MAGIC_LINK}?login=${encodeURIComponent(confirmLink)}`;
 }

@@ -1,4 +1,4 @@
-import type { Enums } from "$lib/types/generated/supabase.types";
+import type { Enums } from '$lib/types/generated/supabase.types';
 
 export const APP_NAME = 'Free Production-Ready AI Web Template';
 
@@ -43,9 +43,9 @@ export const APP_SUBSCRIPTION_PLAN_TYPES = {
 	}
 } as const;
 
-export const APP_SUBSCRIPTION_INTERVAL_IDS: Enums<'app_subscription_type'>[] = Object.values(APP_SUBSCRIPTION_PLAN_TYPES).flatMap(
-	(plan) => plan.intervals.flatMap((interval) => interval.id)
-);
+export const APP_SUBSCRIPTION_INTERVAL_IDS: Enums<'app_subscription_type'>[] = Object.values(
+	APP_SUBSCRIPTION_PLAN_TYPES
+).flatMap((plan) => plan.intervals.flatMap((interval) => interval.id));
 
 export const APP_RATE_LIMIT_CONFIG = {
 	free: {

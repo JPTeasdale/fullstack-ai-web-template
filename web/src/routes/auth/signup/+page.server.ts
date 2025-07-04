@@ -1,9 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { URL_VERIFY_MAGIC_LINK } from '$lib/url';
 import { createValidatedActionHandler, actionSuccess } from '$lib/server/actions/helpers';
 import { z } from 'zod';
-import { OperationError } from '$lib/errors';
+import { signUpAndSendEmail } from '$lib/server/auth/sign-up';
 
 export const load: PageServerLoad = async ({ locals: { session } }) => {
 	if (session) {
@@ -23,39 +22,16 @@ const signupSchema = z
 	});
 
 export const actions: Actions = {
-	signup: createValidatedActionHandler(signupSchema, async ({ body, ctx, url }) => {
-		const { email, password } = body;
-		const { supabase } = ctx;
+	signup: createValidatedActionHandler(signupSchema, async (event) => {
+		const {
+			body: { email, password }
+		} = event;
 
-		const { data, error } = await supabase.auth.signUp({
-			email,
-			password,
-			options: {
-				emailRedirectTo: `${url.origin}${URL_VERIFY_MAGIC_LINK}`
-			}
-		});
+		await signUpAndSendEmail(event, email, password);
 
-		if (error) {
-			throw new OperationError(error.message, 'auth.signup');
-		}
-
-		// If user already exists but is not confirmed, tell them to check email
-		if (data.user && !data.session) {
-			return actionSuccess(
-				{ email },
-				'Please check your email and click the confirmation link to complete your registration.'
-			);
-		}
-
-		// If signup was successful and user is immediately signed in
-		if (data.session) {
-			throw redirect(303, '/');
-		}
-
-		// Default success message
 		return actionSuccess(
 			{ email },
-			'Account created successfully! Please check your email to confirm your account.'
+			'Please check your email and click the confirmation link to complete your registration.'
 		);
 	})
 };

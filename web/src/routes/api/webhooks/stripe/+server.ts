@@ -4,7 +4,7 @@ import {
 	convertStripeSubscription,
 	getStripe,
 	getSubscriptionMetadata
-} from '$lib/server/clients/stripe/stripe_client';
+} from '$lib/server/services/stripe/stripe_client';
 import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
 import type Stripe from 'stripe';
 import type { Enums } from '$lib/types/generated/supabase.types';

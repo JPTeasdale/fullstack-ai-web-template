@@ -43,6 +43,7 @@ DROP TYPE IF EXISTS public.subscription_status CASCADE;
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "citext";
 -- ============================================================================
 -- USER PROFILES TABLE
 -- ============================================================================
@@ -133,6 +134,7 @@ CREATE TABLE public.user_private (
     plan public.app_subscription_tier NOT NULL DEFAULT 'free',
     call_tokens_remaining INTEGER NOT NULL DEFAULT 0,
     call_tokens_last_refill TIMESTAMPTZ DEFAULT (NOW() - INTERVAL '1 year') NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -157,7 +159,6 @@ CREATE TABLE public.organizations (
     description TEXT,
     logo_url TEXT,
     website_url TEXT,
-    openai_vector_store_id TEXT,
     created_by UUID REFERENCES public.user_profiles(user_id) ON DELETE
     SET NULL,
         created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -174,6 +175,7 @@ CREATE TABLE public.organization_private (
     plan public.app_subscription_tier NOT NULL DEFAULT 'free',
     call_tokens_remaining INTEGER NOT NULL DEFAULT 0,
     call_tokens_last_refill TIMESTAMPTZ DEFAULT (NOW() - INTERVAL '1 year') NOT NULL,
+    openai_vector_store_id TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -185,18 +187,16 @@ FROM anon,
     authenticated;
 -- Create function to handle organization private sync
 CREATE OR REPLACE FUNCTION public.handle_organization_private_sync() RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = '' AS $$
-BEGIN
-    INSERT INTO public.organization_private (organization_id)
-    VALUES (NEW.id);
-    RETURN NEW;
+SET search_path = '' AS $$ BEGIN
+INSERT INTO public.organization_private (organization_id)
+VALUES (NEW.id);
+RETURN NEW;
 END;
 $$;
 -- Create trigger for organization private sync
 CREATE TRIGGER on_organization_created
 AFTER
 INSERT ON public.organizations FOR EACH ROW EXECUTE FUNCTION public.handle_organization_private_sync();
-
 -- Create trigger for updated_at on organization_private
 CREATE TRIGGER organization_private_updated_at BEFORE
 UPDATE ON public.organization_private FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -335,10 +335,16 @@ CREATE POLICY "Users can view and manage organization members for their organiza
 CREATE TYPE public.invitation_status AS ENUM ('pending', 'accepted', 'declined', 'expired');
 CREATE TABLE public.invitations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
     organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE NOT NULL,
+    organization_name TEXT NOT NULL,
+    organization_description TEXT,
+    organization_logo_url TEXT,
     email TEXT NOT NULL,
     role public.member_role NOT NULL DEFAULT 'member',
     invited_by UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
+    invited_by_name TEXT,
+    invited_by_avatar_url TEXT,
     status public.invitation_status NOT NULL DEFAULT 'pending',
     token TEXT UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
     expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '7 days') NOT NULL,
@@ -355,6 +361,29 @@ CREATE POLICY "Organization members can view and manage invitations for their or
         select public.authorize_active_org(organization_id, 'member')
     )
 );
+CREATE POLICY "Users can view their own invitations" ON public.invitations FOR
+SELECT USING (
+        (
+            select auth.uid()
+        ) = user_id
+        OR email = (
+            select (up.email)
+            from public.user_profiles up
+            where up.user_id = auth.uid()
+        )
+    );
+-- New policy to allow viewing profiles of members in the active organization
+CREATE POLICY "Users can view profiles of members in their active organization" ON public.user_profiles FOR
+SELECT USING (
+        EXISTS (
+            SELECT 1
+            FROM public.organization_members om1
+                JOIN public.organization_members om2 ON om1.organization_id = om2.organization_id
+            WHERE om1.user_id = auth.uid()
+                AND om2.user_id = user_profiles.user_id
+                AND om1.organization_id = public.current_active_organization_id()
+        )
+    );
 -- Create trigger for updated_at on invitations
 CREATE TRIGGER invitations_updated_at BEFORE
 UPDATE ON public.invitations FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -421,47 +450,40 @@ SELECT USING (
 -- Create trigger for updated_at on subscriptions
 CREATE TRIGGER subscriptions_updated_at BEFORE
 UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
 -- Create function to sync subscription plan to private tables
 CREATE OR REPLACE FUNCTION public.handle_subscription_plan_sync() RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = '' AS $$
-DECLARE
-    new_plan public.app_subscription_tier;
-BEGIN
-    -- Determine the plan tier based on subscription type and status
-    IF NEW.status IN ('active', 'trialing') AND NEW.app_subscription_type IS NOT NULL THEN
-        new_plan := CASE
-            WHEN NEW.app_subscription_type::text LIKE 'basic_%' THEN 'basic'::public.app_subscription_tier
-            WHEN NEW.app_subscription_type::text LIKE 'pro_%' THEN 'pro'::public.app_subscription_tier
-            ELSE 'free'::public.app_subscription_tier
-        END;
-    ELSE
-        new_plan := 'free'::public.app_subscription_tier;
-    END IF;
-    
-    -- Update the appropriate private table
-    IF NEW.user_id IS NOT NULL THEN
-        -- Update user private plan
-        UPDATE public.user_private
-        SET plan = new_plan,
-            updated_at = NOW()
-        WHERE user_id = NEW.user_id;
-    ELSIF NEW.organization_id IS NOT NULL THEN
-        -- Update organization private plan
-        UPDATE public.organization_private
-        SET plan = new_plan,
-            updated_at = NOW()
-        WHERE organization_id = NEW.organization_id;
-    END IF;
-    
-    RETURN NEW;
+DECLARE new_plan public.app_subscription_tier;
+BEGIN -- Determine the plan tier based on subscription type and status
+IF NEW.status IN ('active', 'trialing')
+AND NEW.app_subscription_type IS NOT NULL THEN new_plan := CASE
+    WHEN NEW.app_subscription_type::text LIKE 'basic_%' THEN 'basic'::public.app_subscription_tier
+    WHEN NEW.app_subscription_type::text LIKE 'pro_%' THEN 'pro'::public.app_subscription_tier
+    ELSE 'free'::public.app_subscription_tier
+END;
+ELSE new_plan := 'free'::public.app_subscription_tier;
+END IF;
+-- Update the appropriate private table
+IF NEW.user_id IS NOT NULL THEN -- Update user private plan
+UPDATE public.user_private
+SET plan = new_plan,
+    updated_at = NOW()
+WHERE user_id = NEW.user_id;
+ELSIF NEW.organization_id IS NOT NULL THEN -- Update organization private plan
+UPDATE public.organization_private
+SET plan = new_plan,
+    updated_at = NOW()
+WHERE organization_id = NEW.organization_id;
+END IF;
+RETURN NEW;
 END;
 $$;
-
 -- Create trigger for subscription plan sync
 CREATE TRIGGER subscription_plan_sync
-AFTER INSERT OR UPDATE ON public.subscriptions
-FOR EACH ROW EXECUTE FUNCTION public.handle_subscription_plan_sync();
+AFTER
+INSERT
+    OR
+UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.handle_subscription_plan_sync();
 -- ============================================================================
 -- AUDIT LOGS TABLE
 -- ============================================================================
@@ -544,7 +566,7 @@ CREATE TABLE public.files (
     size BIGINT NOT NULL,
     mime_type TEXT NOT NULL,
     checksum TEXT,
-    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
     organization_id UUID REFERENCES public.organizations(id) ON DELETE CASCADE,
     is_public BOOLEAN DEFAULT FALSE NOT NULL,
     metadata JSONB DEFAULT '{}',
@@ -552,66 +574,50 @@ CREATE TABLE public.files (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     openai_file_id TEXT,
     is_ready BOOLEAN DEFAULT FALSE NOT NULL,
-    CONSTRAINT files_size_positive CHECK (size > 0)
+    CONSTRAINT files_size_positive CHECK (size > 0),
+    CONSTRAINT files_user_id_or_organization_id_not_null CHECK (
+        (
+            user_id IS NOT NULL
+            AND organization_id IS NULL
+        )
+        OR (
+            user_id IS NULL
+            AND organization_id IS NOT NULL
+        )
+    )
 );
 -- Enable RLS for files
 ALTER TABLE public.files ENABLE ROW LEVEL SECURITY;
 -- RLS Policies for files
-CREATE POLICY "Users can view their own files" ON public.files FOR
-SELECT USING (
-        (
-            select auth.uid()
-        ) = user_id
-    );
+CREATE POLICY "Users can manage their own files" ON public.files FOR ALL USING (
+    (
+        select auth.uid()
+    ) = user_id
+) WITH CHECK (
+    (
+        select auth.uid()
+    ) = user_id
+);
 CREATE POLICY "Users can view public files" ON public.files FOR
 SELECT USING (is_public = TRUE);
+
 CREATE POLICY "Users can view organization files they belong to" ON public.files FOR
 SELECT USING (
         (
             select public.authorize_active_org(organization_id, 'member')
         )
     );
-CREATE POLICY "Users can upload their own files" ON public.files FOR
-INSERT WITH CHECK (
-        (
-            select auth.uid()
-        ) = user_id
-    );
 CREATE POLICY "Users can upload files to organizations they belong to" ON public.files FOR
 INSERT WITH CHECK (
         (
             select public.authorize_active_org(organization_id, 'member')
         )
-        AND (
-            select auth.uid()
-        ) = user_id
     );
-CREATE POLICY "Users can update their own files" ON public.files FOR
-UPDATE USING (
-        (
-            select auth.uid()
-        ) = user_id
-    ) WITH CHECK (
-        (
-            select auth.uid()
-        ) = user_id
-    );
-CREATE POLICY "Organization admins can update organization files" ON public.files FOR
-UPDATE USING (
-        (
-            select public.authorize_active_org(organization_id, 'admin')
-        )
-    ) WITH CHECK (
-        (
-            select public.authorize_active_org(organization_id, 'admin')
-        )
-    );
-CREATE POLICY "Users can delete their own files" ON public.files FOR DELETE USING (
+CREATE POLICY "Organization admins can manage organization files" ON public.files FOR ALL USING (
     (
-        select auth.uid()
-    ) = user_id
-);
-CREATE POLICY "Organization admins can delete organization files" ON public.files FOR DELETE USING (
+        select public.authorize_active_org(organization_id, 'admin')
+    )
+) WITH CHECK (
     (
         select public.authorize_active_org(organization_id, 'admin')
     )
@@ -677,9 +683,9 @@ $$;
 CREATE OR REPLACE FUNCTION public.accept_invitation(invitation_token TEXT) RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = '' AS $$
 DECLARE invitation_record RECORD;
-user_email TEXT;
+v_user_email text;
 BEGIN -- Get current user email
-SELECT email INTO user_email
+SELECT email INTO v_user_email
 FROM auth.users
 WHERE id = auth.uid();
 -- Get invitation details
@@ -688,7 +694,10 @@ FROM public.invitations
 WHERE token = invitation_token
     AND status = 'pending'
     AND expires_at > NOW()
-    AND email = user_email;
+    AND (
+        email = v_user_email
+        OR user_id = auth.uid()
+    );
 IF NOT FOUND THEN RETURN FALSE;
 END IF;
 -- Add user to organization

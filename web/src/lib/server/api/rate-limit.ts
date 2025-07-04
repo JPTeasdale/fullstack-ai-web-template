@@ -1,8 +1,8 @@
-import { APP_RATE_LIMIT_CONFIG } from "$lib/app/constants";
-import { NotFoundError, RateLimitError, UnauthorizedError } from "$lib/errors";
-import type { RequestEvent } from "@sveltejs/kit";
-import { differenceInMilliseconds, subMilliseconds } from "date-fns";
-import { addMilliseconds } from "date-fns";
+import { APP_RATE_LIMIT_CONFIG } from '$lib/app/constants';
+import { NotFoundError, RateLimitError, UnauthorizedError } from '$lib/server/errors';
+import type { RequestEvent } from '@sveltejs/kit';
+import { differenceInMilliseconds, subMilliseconds } from 'date-fns';
+import { addMilliseconds } from 'date-fns';
 
 function createRateLimitFunction(resource: 'user' | 'organization') {
 	const table = `${resource}_private` as const;

@@ -1,22 +1,28 @@
-import { deleteOrganizationFile, getOrganizationFile } from '$lib/models/files';
-import { createApiHandler, requireAuth } from '$lib/server/api/helpers';
-import { fileResponse, noContentResponse } from '$lib/server/api/response';
+import { deleteFile, getFileDownload } from '$lib/server/services/fileService';
+import { createOrganizationApiHandler } from '$lib/server/api/helpers';
+import { fileDownloadResponse, noContentResponse } from '$lib/server/api/response';
+import { ConfigurationError } from '$lib/server/errors';
 
-export const GET = createApiHandler(async (event) => {
+export const GET = createOrganizationApiHandler(async (event) => {
 	const { fileId } = event.params;
 
-	const result = await getOrganizationFile(event.locals, fileId!);
+	if (!fileId) {
+		throw new ConfigurationError('File ID is required');
+	}
 
-	return fileResponse(result.body, result.file.name, result.file.mime_type, result.file.size);
+	const { file, object } = await getFileDownload(event, fileId);
+
+	return fileDownloadResponse(object.body, file.name, file.mime_type, file.size);
 });
 
-export const DELETE = createApiHandler(async (event) => {
+export const DELETE = createOrganizationApiHandler(async (event) => {
 	const { fileId } = event.params;
 
-	// Just ensure user is authenticated
-	await requireAuth(event);
+	if (!fileId) {
+		throw new ConfigurationError('File ID is required');
+	}
 
-	await deleteOrganizationFile(event.locals, fileId!);
+	await deleteFile(event, fileId);
 
 	return noContentResponse();
 });
