@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { HTMLInputAttributes } from 'svelte/elements';
+	import type { FormEventHandler, HTMLInputAttributes } from 'svelte/elements';
 	import { onMount } from 'svelte';
 	let {
 		numInputs = 6,
@@ -24,12 +24,13 @@
 		return str.substring(0, index) + replacement + str.substring(index + replacement.length);
 	}
 
-	function handlePaste(e: Event) {
+	function handlePaste(e: ClipboardEvent) {
 		e.preventDefault();
 		e.stopPropagation();
 		e.stopImmediatePropagation();
-		const pastedData = e.clipboardData.getData('text/plain').substring(0, numInputs);
-		code = pastedData;
+		if (e.clipboardData) {
+			code = e.clipboardData.getData('text/plain').substring(0, numInputs);
+		}
 	}
 
 	function handleKeyDown(e: KeyboardEvent, idx: number) {
@@ -44,11 +45,16 @@
 		}
 	}
 
-	function handleInput(e: InputEvent, idx: number) {
+	function handleInput(
+		e: Event & {
+			currentTarget: EventTarget & HTMLInputElement;
+		},
+		idx: number
+	) {
 		e.preventDefault();
 		e.stopPropagation();
 		e.stopImmediatePropagation();
-		const newValue = e.target?.value.replace(/\D/g, '');
+		const newValue = e.currentTarget?.value.replace(/\D/g, '');
 		if (newValue) {
 			code = replaceAt(code, newValue, idx).substring(0, numInputs);
 			if (inputRefs.length > idx + 1) {
@@ -76,10 +82,10 @@
 			type="text"
 			maxlength="1"
 			value={code[idx] || ''}
-			on:paste={handlePaste}
-			on:keydown={(e) => handleKeyDown(e, idx)}
-			on:input={(e) => handleInput(e, idx)}
-			on:focus={() => handleFocus(idx)}
+			onpaste={handlePaste}
+			onkeydown={(e) => handleKeyDown(e, idx)}
+			oninput={(e) => handleInput(e, idx)}
+			onfocus={() => handleFocus(idx)}
 			bind:this={inputRefs[idx]}
 			class="h-12 w-12 p-1 text-center"
 			autocomplete="one-time-code"
