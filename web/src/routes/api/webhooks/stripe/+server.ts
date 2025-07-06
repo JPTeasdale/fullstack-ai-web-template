@@ -5,7 +5,7 @@ import {
 	getStripe,
 	getSubscriptionMetadata
 } from '$lib/server/services/stripe/stripe_client';
-import { SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET } from '$env/static/private';
+import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
 import type Stripe from 'stripe';
 import type { Enums } from '$lib/types/generated/supabase.types';
 
@@ -71,7 +71,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	try {
 		// Verify the webhook signature
-		event = stripe.webhooks.constructEvent(payload, signature, SUPABASE_AUTH_EMAIL_WEBHOOK_SECRET);
+		event = stripe.webhooks.constructEvent(payload, signature, STRIPE_WEBHOOK_SECRET);
 	} catch (err) {
 		console.error('Webhook signature verification failed:', err);
 		return json({ error: 'Invalid signature' }, { status: 400 });

@@ -326,5 +326,4 @@ secrets = "env(SUPABASE_AUTH_HOOK_SECRET)"
 site_url = "https://template.johnteasdale.com"
 
 [remotes.production.auth.hook.send_email]
-enabled = true
-uri = "https://template.johnteasdale.com/api/webhooks/supabase/auth_email"
+enabled = false
