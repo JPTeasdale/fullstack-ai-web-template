@@ -1,7 +1,8 @@
 import type {
 	AiFunctionCallDefinitions,
 	FunctionCallMap,
-	OpenAiResponseStreamEvent
+	OpenAiResponseStreamEvent,
+	OpenAIResponse
 } from '$lib/ai/types';
 import { applyOutputItemFormat } from './applyOutputItemFormat';
 import { isServerFunction, processServerFunctionCall } from './serverFunctionCalls';
@@ -44,6 +45,22 @@ export function setOutputItemFormattedTypeTransform(formattedType?: string): Tra
 				break;
 			case 'response.output_item.done':
 				chunk.item = applyOutputItemFormat(chunk.item, formattedType);
+				break;
+			default:
+				break;
+		}
+
+		return chunk;
+	};
+}
+
+export function onResponseComplete(
+	onComplete: (response: OpenAIResponse) => Promise<void>
+): TransformFunction {
+	return async (chunk: OpenAiResponseStreamEvent) => {
+		switch (chunk.type) {
+			case 'response.completed':
+				await onComplete(chunk.response);
 				break;
 			default:
 				break;

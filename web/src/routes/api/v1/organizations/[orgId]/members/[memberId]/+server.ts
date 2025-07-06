@@ -1,12 +1,12 @@
 import { updateMemberRole, removeMember } from '$lib/server/models/members';
-import { createValidatedOrganizationApiHandler, createOrganizationApiHandler } from '$lib/server/api/helpers';
+import { createOrganizationApiHandler, apiValidate } from '$lib/server/api/helpers';
 import { successResponse, noContentResponse } from '$lib/server/api/response';
 import { updateMemberRoleSchema } from '$lib/schemas/organizations';
 
-export const PATCH = createValidatedOrganizationApiHandler(updateMemberRoleSchema, async (event) => {
+export const PATCH = createOrganizationApiHandler(async (event) => {
 	const { organizationId } = event;
 	const { memberId } = event.params;
-	const { role } = event.validated;
+	const { role } = await apiValidate(updateMemberRoleSchema, event);
 
 	await updateMemberRole(event, organizationId, memberId!, role);
 

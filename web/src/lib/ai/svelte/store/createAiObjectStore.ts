@@ -1,18 +1,23 @@
 import { get, writable } from 'svelte/store';
 import { errorStr } from '$lib/utils/error';
 import { handleStreamEvents } from '$lib/ai/client/handle_stream_events';
+import { zodDeepPartial } from 'zod-deep-partial';
+import { parse as parsePartial } from 'partial-json';
+
 import type {
 	AppFunctionCallItem,
 	AiToolResult,
-	ConversationItem,
 	AiFunctionCallDefinitions,
 	LocalFunctionCallResult,
 	HandleFunctionCallFunction
 } from '$lib/ai/types';
 import { fetchAi } from '$lib/ai/client/fetch';
+import type { z } from 'zod';
 
-interface PendingToolCall<T extends AiFunctionCallDefinitions> {
-	tool: AppFunctionCallItem<T>;
+type AiObject = Record<string, unknown>;
+
+interface PendingToolCall<F extends AiFunctionCallDefinitions> {
+	tool: AppFunctionCallItem<F>;
 	resolve: (s: string) => void;
 }
 
@@ -20,31 +25,42 @@ type HandleResponseMeta = {
 	apiPath: string;
 };
 
-type ConversationStoreOptions<T extends AiFunctionCallDefinitions> = {
-	initialConversation?: ConversationItem[];
-	handleAiFunctionCall: HandleFunctionCallFunction<T>;
+type AiObjectStoreOptions<T extends AiObject, F extends AiFunctionCallDefinitions> = {
+	initialObject?: T;
+	handleAiFunctionCall: HandleFunctionCallFunction<F>;
 };
 
-export class ConversationStore<T extends AiFunctionCallDefinitions> {
-	readonly conversation = writable<ConversationItem[]>([]);
+export class AiObjectStore<T extends AiObject, F extends AiFunctionCallDefinitions> {
+	readonly schema: z.ZodSchema<T>;
+	readonly schemaPartial: z.ZodSchema<T>;
+	readonly output = writable<T | null>(null);
 	readonly generating = writable(false);
-	readonly conversationError = writable('');
+	readonly error = writable('');
 	readonly previousResponseId = writable<string | null>(null);
 	readonly analyzingFileId = writable<string | null>(null);
-	readonly pendingToolCall = writable<PendingToolCall<T> | null>(null);
+	readonly pendingToolCall = writable<PendingToolCall<F> | null>(null);
 	readonly handleAiFunctionCall: (
-		fnCall: AppFunctionCallItem<T>
+		fnCall: AppFunctionCallItem<F>
 	) => Promise<LocalFunctionCallResult>;
 
-	constructor(opts: ConversationStoreOptions<T>) {
-		this.conversation.set(opts.initialConversation || []);
+	constructor(schema: z.ZodSchema<T>, opts: AiObjectStoreOptions<T, F>) {
+		this.schema = schema;
+		this.schemaPartial = zodDeepPartial(schema);
+		this.output.set(opts.initialObject || null);
 		this.handleAiFunctionCall = opts.handleAiFunctionCall;
 	}
 
 	private handleResponse = async (res: Response, meta: HandleResponseMeta) => {
 		const callResults: AiToolResult[] = [];
 
-		await handleStreamEvents<T>(res, {
+		await handleStreamEvents<F>(res, {
+			onError: (error) => {
+				const errStr = errorStr(error);
+				console.warn('SETTING CONVERSATION ERROR:', {
+					errStr
+				});
+				this.error.set(errStr);
+			},
 			onFunctionCall: async (fnCall) => {
 				if (fnCall.call_id) {
 					if (fnCall.meta.call_from_server) {
@@ -88,12 +104,34 @@ export class ConversationStore<T extends AiFunctionCallDefinitions> {
 				}
 			},
 			onItemAdded: (item) => {
-				this.conversation.update((conv) => [...conv, JSON.parse(JSON.stringify(item))]);
+				if (item.type === 'message') {
+					const content = item.content[0];
+					if (content && content.type === 'output_text') {
+						this.output.set({});
+					}
+				}
 			},
 			onItemUpdated: (item) => {
-				this.conversation.update((conv) =>
-					conv.map((i) => (i.id === item.id ? JSON.parse(JSON.stringify(item)) : i))
-				);
+				if (item.type === 'message') {
+					const content = item.content[0];
+					if (content && content.type === 'output_text') {
+						if (item.done) {
+							const res = this.schema.safeParse(JSON.parse(content.text));
+							if (res.success) {
+								this.output.set(res.data);
+							} else {
+								console.error('onItemUpdated Parse Error', res);
+							}
+						} else {
+							const res = this.schemaPartial.safeParse(parsePartial(content.text));
+							if (res.success) {
+								this.output.set(res.data);
+							} else {
+								console.error('onItemUpdated Parse Error', res);
+							}
+						}
+					}
+				}
 			},
 			onComplete: (responseId) => {
 				this.previousResponseId.set(responseId);
@@ -101,7 +139,7 @@ export class ConversationStore<T extends AiFunctionCallDefinitions> {
 		});
 
 		if (callResults.length) {
-			await this.handleResponse(
+			this.handleResponse(
 				await fetchAi(meta.apiPath, {
 					fnCallResults: callResults,
 					previousResponseId: get(this.previousResponseId)
@@ -111,24 +149,8 @@ export class ConversationStore<T extends AiFunctionCallDefinitions> {
 		}
 	};
 
-	sendMessage = async (apiPath: string, prompt: string) => {
-		if (prompt.length) {
-			this.conversation.update((conv) => [
-				...conv,
-				{
-					id: crypto.randomUUID(),
-					type: 'message',
-					role: 'user' as const,
-					content: [
-						{
-							type: 'input_text',
-							text: prompt
-						}
-					]
-				}
-			]);
-		}
-
+	fetch = async (apiPath: string, prompt: string) => {
+		this.error.set('');
 		this.generating.set(true);
 		try {
 			await this.handleResponse(
@@ -140,15 +162,15 @@ export class ConversationStore<T extends AiFunctionCallDefinitions> {
 			);
 		} catch (error) {
 			console.error('Error generating response:', error);
-			this.conversationError.set('Error generating response. Please try again.');
+			this.error.set('Error generating response. Please try again.');
 		}
 
 		this.generating.set(false);
 	};
 
 	clearConversation = () => {
-		this.conversation.set([]);
-		this.conversationError.set('');
+		this.output.set(null);
+		this.error.set('');
 		this.previousResponseId.set(null);
 		this.analyzingFileId.set(null);
 	};

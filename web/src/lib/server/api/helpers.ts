@@ -1,17 +1,29 @@
 import { ValidationError } from '$lib/server/errors';
+import { createApiErrorResponse } from '$lib/server/errors/api';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { z } from 'zod';
 
 import { assertAuthenticated, extractOrganizationId, type AuthenticatedEvent } from './context';
-
 /**
  * Create an API handler with automatic error handling
  */
-export function createApiHandler(handler: (event: AuthenticatedEvent) => Promise<Response>) {
-	return async (event: RequestEvent) => {
+export function createApiHandler<T extends RequestEvent>(handler: (event: T) => Promise<Response>) {
+	return async (event: T) => {
+		try {
+			return await handler(event);
+		} catch (error) {
+			return createApiErrorResponse(error);
+		}
+	};
+}
+
+export function createAuthenticatedApiHandler<T extends RequestEvent>(
+	handler: (event: AuthenticatedEvent) => Promise<Response>
+) {
+	return createApiHandler(async (event) => {
 		assertAuthenticated(event);
 		return await handler(event);
-	};
+	});
 }
 
 /**
@@ -20,68 +32,34 @@ export function createApiHandler(handler: (event: AuthenticatedEvent) => Promise
 export function createOrganizationApiHandler(
 	handler: (event: AuthenticatedEvent & { organizationId: string }) => Promise<Response>
 ) {
-	return async (event: RequestEvent) => {
-		assertAuthenticated(event);
+	return createAuthenticatedApiHandler(async (event) => {
 		const organizationId = extractOrganizationId(event);
 		await event.locals.supabase.rpc('set_current_organization_id', {
 			org_id: organizationId
 		});
 		return await handler({ ...event, organizationId });
-	};
-}
-
-/**
- * Create an API handler with request validation
- */
-export function createValidatedApiHandler<T extends z.ZodType>(
-	schema: T,
-	handler: (event: AuthenticatedEvent & { validated: z.infer<T> }) => Promise<Response>
-) {
-	return createApiHandler(async (event) => {
-		const data = await event.request.json();
-		const result = schema.safeParse(data);
-
-		if (!result.success) {
-			const errors: Record<string, string[]> = {};
-			result.error.errors.forEach((err) => {
-				const path = err.path.join('.');
-				if (!errors[path]) errors[path] = [];
-				errors[path].push(err.message);
-			});
-
-			throw new ValidationError('Validation failed', errors);
-		}
-
-		return handler({ ...event, validated: result.data });
 	});
 }
 
-/**
- * Create an API handler with request validation
- */
-export function createValidatedOrganizationApiHandler<T extends z.ZodType>(
+export async function apiValidate<T extends z.ZodType>(
 	schema: T,
-	handler: (
-		event: AuthenticatedEvent & { organizationId: string; validated: z.infer<T> }
-	) => Promise<Response>
-) {
-	return createOrganizationApiHandler(async (event) => {
-		const data = await event.request.json();
-		const result = schema.safeParse(data);
+	event: RequestEvent
+): Promise<z.infer<T>> {
+	const data = await event.request.json();
+	const result = schema.safeParse(data);
 
-		if (!result.success) {
-			const errors: Record<string, string[]> = {};
-			result.error.errors.forEach((err) => {
-				const path = err.path.join('.');
-				if (!errors[path]) errors[path] = [];
-				errors[path].push(err.message);
-			});
+	if (!result.success) {
+		const errors: Record<string, string[]> = {};
+		result.error.errors.forEach((err) => {
+			const path = err.path.join('.');
+			if (!errors[path]) errors[path] = [];
+			errors[path].push(err.message);
+		});
 
-			throw new ValidationError('Validation failed', errors);
-		}
+		throw new ValidationError('Validation failed', errors);
+	}
 
-		return handler({ ...event, validated: result.data });
-	});
+	return result.data;
 }
 
 /**

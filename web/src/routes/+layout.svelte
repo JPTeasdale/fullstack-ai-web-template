@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import AuthModal from '$lib/components/AuthModal/AuthModal.svelte';
 
 	import posthog from 'posthog-js';
 	import { onMount } from 'svelte';
@@ -16,3 +17,4 @@
 </script>
 
 {@render children()}
+<AuthModal />

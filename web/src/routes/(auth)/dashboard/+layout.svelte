@@ -2,8 +2,13 @@
 	import Header from '$lib/components/Header/Header.svelte';
 	import Sidebar from '$lib/components/Sidebar/Sidebar.svelte';
 	import Chat from '$lib/ai/svelte/components/chat/Chat.svelte';
-	import { AiConversationStore } from '$lib/ai/svelte/store/createAiStore';
-	import { URL_API_SIGNOUT, URL_DASHBOARD, URL_ORGANIZATIONS, URL_USER_INVITATIONS } from '$lib/url';
+	import { AiConversationStore } from '$lib/ai/svelte/store/createAiConversationStore';
+	import {
+		URL_API_SIGNOUT,
+		URL_DASHBOARD,
+		URL_ORGANIZATIONS,
+		URL_USER_INVITATIONS
+	} from '$lib/url';
 	import { House, Mail } from '@lucide/svelte';
 	import SidebarLink from '$lib/components/Sidebar/SidebarLink.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';

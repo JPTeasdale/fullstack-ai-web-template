@@ -1,5 +1,5 @@
 import { sequence } from '@sveltejs/kit/hooks';
-import { apiAuth as hookApi } from '$lib/server/svelte_handlers/hook_api';
+import { hookApi } from '$lib/server/svelte_handlers/hook_api';
 import { hookDisableDevTools } from '$lib/server/svelte_handlers/hook_disable_devtools';
 import { hookSupabaseSession } from '$lib/server/svelte_handlers/hook_supabase';
 import { hookRedirects } from '$lib/server/svelte_handlers/hook_redirects';
@@ -7,7 +7,7 @@ import { hookClients } from '$lib/server/svelte_handlers/hook_clients';
 import { getPosthog } from '$lib/server/services/posthog';
 
 import type { HandleServerError } from '@sveltejs/kit';
-import { throwApiError } from '$lib/server/errors';
+import { throwApiError } from '$lib/server/errors/api';
 
 export const handleError: HandleServerError = async ({ error, status, event, message }) => {
 	const requestId = (event.locals as any).requestId || 'unknown';
@@ -41,7 +41,9 @@ export const handleError: HandleServerError = async ({ error, status, event, mes
 		}
 	}
 
-	throwApiError(error);
+	if (!event.url.pathname.startsWith('/api/')) {
+		throwApiError(error);
+	}
 };
 
 export const handle = sequence(

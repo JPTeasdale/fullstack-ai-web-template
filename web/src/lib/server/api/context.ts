@@ -24,7 +24,6 @@ export function assertAuthenticated(event: RequestEvent): asserts event is Authe
 	}
 }
 
-
 export function extractOrganizationId(event: RequestEvent): string {
 	assertAuthenticated(event);
 	if (!event.params.orgId) {

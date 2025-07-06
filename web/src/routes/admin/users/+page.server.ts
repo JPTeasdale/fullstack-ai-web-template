@@ -43,7 +43,7 @@ export const actions = {
 					type: 'recovery',
 					email: parsed.email
 				});
-				
+
 				if (linkData.error) {
 					throw new Error(linkData.error.message);
 				}
@@ -60,7 +60,7 @@ export const actions = {
 					type: 'magiclink',
 					email: parsed.email
 				});
-				
+
 				if (linkData.error) {
 					throw new Error(linkData.error.message);
 				}
@@ -83,7 +83,7 @@ export const actions = {
 					type: 'invite',
 					email: parsed.email
 				});
-				
+
 				if (linkData.error) {
 					throw new Error(linkData.error.message);
 				}

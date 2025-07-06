@@ -3,6 +3,7 @@
 	import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 	import { APP_NAME } from '$lib/app/constants';
 	import AppIcon from '$lib/app/AppIcon.svelte';
+	import AuthModalTrigger from '$lib/components/AuthModalTrigger.svelte';
 	import type { User } from '@supabase/supabase-js';
 	import type { Snippet } from 'svelte';
 	const {
@@ -76,7 +77,7 @@
 					</PopoverContent>
 				</Popover>
 			{:else}
-				<!-- Optional: Show a Login button or something else if no user -->
+				<AuthModalTrigger variant="outline" size="sm" />
 			{/if}
 		</div>
 	</div>

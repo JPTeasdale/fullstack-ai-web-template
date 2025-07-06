@@ -1,11 +1,9 @@
 import { deleteFile, getFileDownload } from '$lib/server/services/fileService';
-import { assertAuthenticated } from '$lib/server/api/context';
-import { createApiHandler } from '$lib/server/api/helpers';
+import { createAuthenticatedApiHandler } from '$lib/server/api/helpers';
 import { fileDownloadResponse, noContentResponse } from '$lib/server/api/response';
 import { ConfigurationError } from '$lib/server/errors';
 
-export const GET = createApiHandler(async (event) => {
-	assertAuthenticated(event);
+export const GET = createAuthenticatedApiHandler(async (event) => {
 	const { fileId } = event.params;
 
 	if (!fileId) {
@@ -17,8 +15,7 @@ export const GET = createApiHandler(async (event) => {
 	return fileDownloadResponse(object.body, file.name, file.mime_type, file.size);
 });
 
-export const DELETE = createApiHandler(async (event) => {
-	assertAuthenticated(event);
+export const DELETE = createAuthenticatedApiHandler(async (event) => {
 	const { fileId } = event.params;
 
 	if (!fileId) {

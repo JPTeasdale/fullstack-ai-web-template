@@ -11,6 +11,113 @@ import {
 	PayloadTooLargeError,
 	ConfigurationError
 } from './index';
+import type { AppApiError } from '$lib/api/apiclient';
+
+/**
+ * Creates a JSON error response for API endpoints
+ * @param err - The error to convert
+ * @param fallbackMessage - Optional fallback message for unknown errors
+ * @returns Response object with JSON error
+ */
+export function createApiErrorResponse(
+	err: unknown,
+	fallbackMessage = 'Internal server error'
+): Response {
+	let status = 500;
+	let message = fallbackMessage;
+	let error: AppApiError = { message, status: 500 };
+
+	// Handle our custom error types
+	if (err instanceof NotFoundError) {
+		status = 404;
+		message = err.message;
+	} else if (err instanceof UnauthorizedError) {
+		status = 401;
+		message = err.message;
+	} else if (err instanceof ForbiddenError) {
+		status = 403;
+		message = err.message;
+	} else if (err instanceof ValidationError) {
+		status = 400;
+		message = err.message;
+		// Include field errors if available
+		if ((err as any).errors) {
+			error.errors = (err as any).errors;
+		}
+	} else if (err instanceof RateLimitError) {
+		status = 429;
+		message = err.message;
+		if ((err as any).retryAfter) {
+			error.retryAfter = (err as any).retryAfter;
+		}
+	} else if (err instanceof ConflictError) {
+		status = 409;
+		message = err.message;
+	} else if (err instanceof PayloadTooLargeError) {
+		status = 413;
+		message = err.message;
+	} else if (err instanceof ConfigurationError) {
+		console.error(`Configuration error: ${err.configKey}`, err.message);
+		status = 500;
+		message = 'Server configuration error';
+	} else if (err instanceof ServiceUnavailableError) {
+		console.error(`Service unavailable: ${err.service}`, err.message);
+		status = 503;
+		message = err.message;
+	} else if (err instanceof OperationError) {
+		// Log the error with context for monitoring
+		console.error(`Operation error (${err.operation}):`, err.message, err.context);
+
+		// Map specific operations to appropriate status codes
+		if (err.operation.startsWith('database')) {
+			status = 500;
+			message = 'Database operation failed';
+		} else if (err.operation.startsWith('validation')) {
+			status = 400;
+			message = err.message;
+		} else if (err.operation.startsWith('auth')) {
+			status = 401;
+			message = err.message;
+		} else {
+			status = 500;
+			message = 'Operation failed';
+		}
+	} else if (err instanceof Error) {
+		console.error('Unexpected error:', err);
+
+		// Check for specific error messages or codes that might indicate status
+		const errorMessage = err.message.toLowerCase();
+		if (errorMessage.includes('unauthorized') || errorMessage.includes('unauthenticated')) {
+			status = 401;
+			message = 'Unauthorized';
+		} else if (errorMessage.includes('forbidden') || errorMessage.includes('permission')) {
+			status = 403;
+			message = 'Forbidden';
+		} else if (errorMessage.includes('not found')) {
+			status = 404;
+			message = 'Not found';
+		} else if (errorMessage.includes('rate limit')) {
+			status = 429;
+			message = 'Too many requests';
+		} else if (errorMessage.includes('conflict') || errorMessage.includes('duplicate')) {
+			status = 409;
+			message = 'Conflict';
+		}
+	} else {
+		// For completely unknown errors
+		console.error('Unknown error type:', err);
+	}
+
+	error.message = message;
+	error.status = status;
+
+	return new Response(JSON.stringify({ error }), {
+		status,
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	});
+}
 
 /**
  * Converts application errors to appropriate HTTP errors
@@ -19,12 +126,14 @@ import {
  * @returns Never (always throws)
  */
 export function throwApiError(err: unknown, fallbackMessage = 'Internal server error'): never {
+	console.error('Throwing API error:', err);
 	// Handle our custom error types
 	if (err instanceof NotFoundError) {
 		throw svelteKitError(404, err.message);
 	}
 
 	if (err instanceof UnauthorizedError) {
+		console.error('Unauthorized error:', err);
 		throw svelteKitError(401, err.message);
 	}
 

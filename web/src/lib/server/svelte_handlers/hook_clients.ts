@@ -77,5 +77,4 @@ export const emailClient: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-
 export const hookClients = sequence(posthog, posthogProxy, openai, emailClient);

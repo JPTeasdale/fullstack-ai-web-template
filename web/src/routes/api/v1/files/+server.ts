@@ -1,10 +1,8 @@
 import { uploadFile } from '$lib/server/services/fileService';
-import { assertAuthenticated, extractOrganizationId } from '$lib/server/api/context';
-import { createApiHandler, parseFileUpload } from '$lib/server/api/helpers';
+import { createAuthenticatedApiHandler, parseFileUpload } from '$lib/server/api/helpers';
 import { createdResponse } from '$lib/server/api/response';
 
-export const POST = createApiHandler(async (event) => {
-	assertAuthenticated(event);
+export const POST = createAuthenticatedApiHandler(async (event) => {
 	// Parse file from FormData
 	const file = await parseFileUpload(event.request);
 
