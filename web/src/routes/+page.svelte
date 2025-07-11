@@ -743,7 +743,7 @@
 				</p>
 				<div class="mt-10 flex flex-col items-center gap-4 sm:flex-row">
 					<Button size="xl" href="/auth/signup" class="group">
-						Create Free Account
+						Use the Template
 						<svg
 							class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
 							fill="none"
@@ -758,7 +758,6 @@
 							/>
 						</svg>
 					</Button>
-					<Button size="xl" href="/auth/signin" variant={'outline'}>Sign In</Button>
 				</div>
 			</div>
 		</div>
