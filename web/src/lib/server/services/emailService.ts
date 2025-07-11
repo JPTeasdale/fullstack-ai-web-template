@@ -7,7 +7,7 @@ export class EmailService {
 	}
 
 	sendAuthEmail = async (email: string, subject: string, html: string, text: string) => {
-		this.sesClient.send(
+		const result = await this.sesClient.send(
 			new SendEmailCommand({
 				Source: 'noreply@johnteasdale.com',
 				Destination: {
@@ -31,5 +31,9 @@ export class EmailService {
 				}
 			})
 		);
+
+		console.log('sendAuthEmail', result);
+
+		return result;
 	};
 }
