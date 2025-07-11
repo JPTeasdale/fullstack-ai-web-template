@@ -30,7 +30,7 @@
 
 	// Countdown timer
 	let countdown = '00:00:00';
-	let countdownInterval: number;
+	let countdownInterval: ReturnType<typeof setInterval>;
 
 	function updateCountdown() {
 		const now = new Date();
@@ -60,15 +60,15 @@
 	const tickerItems = [
 		'🚀 Over 1+ developers using our template',
 		'⚡ Deploy to production in under 10 minutes',
-		'💸 100% cheaper than other templates',
+		'💸 100% FREE - No hidden costs',
 		'🏢 Multi-tenant Database Architecture',
 		'🤖 Full-stack LLM integration with OpenAI',
 		'🔒 Enterprise-grade security built-in',
 		'🌍 Global edge deployment',
-		'🎯 Used by startups',
+		'🎯 Open source and MIT licensed',
 		'📈 Scale from 0 to 1M users seamlessly',
 		'🛡️ SOC2 compliant infrastructure',
-		'🎁 100% free template'
+		'🎁 Forever free - Clone and use today'
 	];
 
 	// Company logos for carousel
@@ -158,7 +158,7 @@
 					href="https://github.com/jpteasdale/fullstack-ai-web-template"
 					class="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-all hover:scale-105 active:scale-95"
 				>
-					<span>Claim Now</span>
+					<span>Get It Free</span>
 					<svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path
 							stroke-linecap="round"
@@ -261,10 +261,10 @@
 									clip-rule="evenodd"
 								/>
 							</svg>
-							Start Building Now
+							Use Template Free
 						</Button>
 						<Button href="#demo" size="xl" variant="outline" class="group">
-							See Live Demo
+							Live Demo
 							<svg
 								class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
 								fill="none"
@@ -303,7 +303,7 @@
 	<div class="border-border bg-muted/30 border-b py-12">
 		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 			<p
-				class="text-muted-foreground mb-8 text-center text-sm font-medium tracking-wider uppercase"
+				class="text-muted-foreground mb-8 text-center text-sm font-medium uppercase tracking-wider"
 			>
 				Here are logos from completely unaffiliated companies
 			</p>
@@ -325,7 +325,7 @@
 	<div id="features" class="bg-muted/50 px-4 py-24 sm:px-6 lg:px-8">
 		<div class="mx-auto max-w-7xl">
 			<div class="text-center">
-				<span class="text-primary text-sm font-semibold tracking-wider uppercase"
+				<span class="text-primary text-sm font-semibold uppercase tracking-wider"
 					>Complete Platform</span
 				>
 				<h2 class="text-foreground mt-2 text-4xl font-bold sm:text-5xl">
@@ -633,7 +633,7 @@
 	<div class="from-background to-muted/30 bg-gradient-to-b px-4 py-24 sm:px-6 lg:px-8">
 		<div class="mx-auto max-w-7xl">
 			<div class="mb-16 text-center">
-				<span class="text-primary text-sm font-semibold tracking-wider uppercase">Testimonials</span
+				<span class="text-primary text-sm font-semibold uppercase tracking-wider">Testimonials</span
 				>
 				<h2 class="text-foreground mt-2 text-4xl font-bold sm:text-5xl">
 					Potentially Loved by Developers Worldwide
@@ -734,12 +734,16 @@
 				</span>
 				<h2 class="text-foreground text-4xl font-bold sm:text-5xl">Experience the Power</h2>
 				<p class="text-muted-foreground mt-4 max-w-2xl text-xl">
-					This entire website is built with our template. Create an account to explore the dashboard
-					and see all features in action.
+					This entire website is built with our template. Payments use a Stripe test account, use
+					one of the <a
+						href="https://stripe.com/docs/testing"
+						target="_blank"
+						class="text-primary hover:underline">Stripe test cards</a
+					> to test the payment integrations.
 				</p>
 				<div class="mt-10 flex flex-col items-center gap-4 sm:flex-row">
 					<Button size="xl" href="/auth/signup" class="group">
-						Start Free Trial
+						Create Free Account
 						<svg
 							class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
 							fill="none"
@@ -814,7 +818,8 @@
 				Ready to Build Your Next Project?
 			</h2>
 			<p class="text-muted-foreground mt-4 text-lg">
-				Stop wasting time on boilerplate. Start building features that matter.
+				Stop wasting time on boilerplate. Start building features that matter - 100% free, no
+				strings attached.
 			</p>
 			<div class="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 				<a
@@ -828,10 +833,10 @@
 							clip-rule="evenodd"
 						/>
 					</svg>
-					Get Started Now
+					Clone & Use Now - It's Free!
 				</a>
 				<div class="text-muted-foreground text-sm">
-					⭐ Star on GitHub • 🚀 Deploy in minutes • 💰 Save months of development
+					⭐ Star on GitHub • 🚀 Deploy in minutes • 💰 No payment required
 				</div>
 			</div>
 		</div>
