@@ -1,4 +1,4 @@
-import { assertAuthenticated } from '$lib/server/api/context';
+import { assertAuthenticated } from '$lib/server/helpers/event';
 import type { LayoutServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 

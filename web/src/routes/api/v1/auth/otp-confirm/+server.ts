@@ -1,5 +1,5 @@
-import { apiValidate, createApiHandler } from '$lib/server/api/helpers';
-import { successResponse } from '$lib/server/api/response';
+import { validateApi, createApiHandler } from '$lib/server/helpers/api_helpers';
+import { successResponse } from '$lib/server/helpers/response';
 import { z } from 'zod';
 import { OperationError, UnauthorizedError } from '$lib/server/errors';
 
@@ -9,7 +9,7 @@ const confirmOtpSchema = z.object({
 });
 
 export const POST = createApiHandler(async (event) => {
-	const { email, otp } = await apiValidate(confirmOtpSchema, event);
+	const { email, otp } = await validateApi(confirmOtpSchema, event);
 
 	const { supabase } = event.locals;
 

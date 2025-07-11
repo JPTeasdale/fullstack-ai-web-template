@@ -1,5 +1,5 @@
 import { OperationError, ConflictError, NotFoundError } from '$lib/server/errors';
-import type { AuthenticatedEvent } from '$lib/server/api/context';
+import type { AuthenticatedEvent } from '$lib/server/helpers/event';
 import type { InviteMemberData } from '$lib/schemas/organizations';
 
 /**

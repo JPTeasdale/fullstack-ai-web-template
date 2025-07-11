@@ -1,5 +1,5 @@
 import { NotFoundError, OperationError, ConfigurationError } from '$lib/server/errors';
-import type { AuthenticatedEvent } from '$lib/server/api/context';
+import type { AuthenticatedEvent } from '$lib/server/helpers/event';
 import type { CreateSubscriptionData } from '$lib/schemas/subscriptions';
 import {
 	getStripe,

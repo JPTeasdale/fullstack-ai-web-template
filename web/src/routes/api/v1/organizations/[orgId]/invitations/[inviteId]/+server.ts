@@ -1,6 +1,6 @@
 import { cancelInvitation } from '$lib/server/models/invitations';
-import { createOrganizationApiHandler } from '$lib/server/api/helpers';
-import { noContentResponse } from '$lib/server/api/response';
+import { createOrganizationApiHandler } from '$lib/server/helpers/api_helpers';
+import { noContentResponse } from '$lib/server/helpers/response';
 import { ConfigurationError } from '$lib/server/errors';
 
 export const DELETE = createOrganizationApiHandler(async (event) => {

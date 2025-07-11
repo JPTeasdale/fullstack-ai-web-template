@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { createValidatedActionHandler, actionSuccess } from '$lib/server/actions/helpers';
+import { createValidatedActionHandler, actionSuccess } from '$lib/server/helpers/action_helpers';
 import { z } from 'zod';
 import { signUpAndSendEmail } from '$lib/server/auth/sign-up';
 

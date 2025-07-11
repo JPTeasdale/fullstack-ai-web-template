@@ -1,5 +1,5 @@
 import { NotFoundError, OperationError, ConflictError } from '$lib/server/errors';
-import type { AuthenticatedEvent } from '$lib/server/api/context';
+import type { AuthenticatedEvent } from '$lib/server/helpers/event';
 import type { Database } from '$lib/types/generated/supabase.types';
 
 type MemberRole = Database['public']['Enums']['member_role'];

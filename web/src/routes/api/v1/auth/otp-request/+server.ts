@@ -1,5 +1,5 @@
-import { apiValidate, createApiHandler } from '$lib/server/api/helpers';
-import { successResponse } from '$lib/server/api/response';
+import { validateApi, createApiHandler } from '$lib/server/helpers/api_helpers';
+import { successResponse } from '$lib/server/helpers/response';
 import { z } from 'zod';
 import { OperationError } from '$lib/server/errors';
 import { getEmailOtpTemplate } from '$lib/email/templates/otp_login_code';
@@ -10,7 +10,7 @@ const requestOtpSchema = z.object({
 
 export const POST = createApiHandler(async (event) => {
 	const { emailService, supabaseAdmin } = event.locals;
-	const { email } = await apiValidate(requestOtpSchema, event);
+	const { email } = await validateApi(requestOtpSchema, event);
 
 	const { data, error } = await supabaseAdmin.auth.admin.generateLink({
 		type: 'magiclink',

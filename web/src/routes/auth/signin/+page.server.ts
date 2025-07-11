@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { URL_DASHBOARD } from '$lib/url';
-import { createValidatedActionHandler } from '$lib/server/actions/helpers';
+import { createValidatedActionHandler } from '$lib/server/helpers/action_helpers';
 import { z } from 'zod';
 import { OperationError } from '$lib/server/errors';
 

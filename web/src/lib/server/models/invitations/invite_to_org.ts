@@ -1,7 +1,7 @@
 import { OperationError } from '$lib/server/errors';
 import { createInvitation } from '$lib/server/models/invitations';
 import type { InviteMemberData } from '$lib/schemas/organizations';
-import type { AuthenticatedEvent } from '$lib/server/api/context';
+import type { AuthenticatedEvent } from '$lib/server/helpers/event';
 import { getInviteToOrgTemplate } from '$lib/email/templates/invite_to_org';
 
 export async function inviteToOrg(

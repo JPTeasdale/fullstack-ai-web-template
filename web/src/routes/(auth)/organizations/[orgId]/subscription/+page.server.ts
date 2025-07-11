@@ -2,8 +2,8 @@ import type { PageServerLoad, Actions } from './$types';
 import { redirect } from '@sveltejs/kit';
 import {
 	createAuthenticatedActionHandler,
-	createAuthenticatedValidatedActionHandler
-} from '$lib/server/actions/helpers';
+	validateFormAction
+} from '$lib/server/helpers/action_helpers';
 import { createSubscriptionSchema } from '$lib/schemas/subscriptions';
 import {
 	getOrganizationSubscription,
@@ -13,7 +13,7 @@ import {
 	reactivateSubscription,
 	createPaymentUpdateSession
 } from '$lib/server/models/subscriptions';
-import { extractOrganizationId, assertAuthenticated } from '$lib/server/api/context';
+import { extractOrganizationId, assertAuthenticated } from '$lib/server/helpers/event';
 
 export const load: PageServerLoad = async (event) => {
 	assertAuthenticated(event);
@@ -58,14 +58,14 @@ export const actions: Actions = {
 		throw redirect(303, checkoutUrl);
 	}),
 
-	createSubscription: createAuthenticatedValidatedActionHandler(
-		createSubscriptionSchema,
+	createSubscription: createAuthenticatedActionHandler(
 		async (event) => {
+			const validated = await validateFormAction(createSubscriptionSchema, event);
 			const organizationId = extractOrganizationId(event);
 
 			const { checkoutUrl } = await createSubscription(event, {
 				organizationId,
-				...event.body
+				...validated
 			});
 			throw redirect(303, checkoutUrl);
 		}

@@ -205,23 +205,23 @@ const mySchema = z.object({
 });
 
 export const actions = {
-  myAction: createValidatedActionHandler(mySchema, async ({ body, ctx }) => {
+  myAction: createActionHandler(mySchema, async (event) => {
+    const validated = validateFormAction(mySchema, event);
+
     // body is validated and typed
-    await createThing(ctx, body);
+    await createThing(event, validated);
     throw redirect(303, "/things");
   }),
 };
 
 // Authenticated with validation
 export const actions = {
-  myAction: createAuthenticatedValidatedActionHandler(
-    mySchema,
-    async ({ body, ctx }) => {
-      // Both authenticated and validated
-      await createUserThing(ctx, body);
-      return actionSuccess({ created: true });
-    }
-  ),
+  myAction: createAuthenticatedActionHandler(mySchema, async (event) => {
+    const validated = validateFormAction(mySchema, event);
+    // Both authenticated and validated
+    await createUserThing(event, validated);
+    return actionSuccess({ created: true });
+  }),
 };
 ```
 

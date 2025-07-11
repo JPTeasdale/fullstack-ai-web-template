@@ -1,6 +1,6 @@
 import { deleteFile, getFileDownload } from '$lib/server/services/fileService';
-import { createOrganizationApiHandler } from '$lib/server/api/helpers';
-import { fileDownloadResponse, noContentResponse } from '$lib/server/api/response';
+import { createOrganizationApiHandler } from '$lib/server/helpers/api_helpers';
+import { fileDownloadResponse, noContentResponse } from '$lib/server/helpers/response';
 import { ConfigurationError } from '$lib/server/errors';
 
 export const GET = createOrganizationApiHandler(async (event) => {

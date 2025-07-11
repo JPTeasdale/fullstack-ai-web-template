@@ -1,7 +1,7 @@
 import { acceptInvitation, getUserInvitations } from '$lib/server/models/invitations';
 import type { PageServerLoad } from './$types';
-import { assertAuthenticated } from '$lib/server/api/context';
-import { createValidatedActionHandler } from '$lib/server/actions/helpers';
+import { assertAuthenticated } from '$lib/server/helpers/event';
+import { createValidatedActionHandler } from '$lib/server/helpers/action_helpers';
 import { invitationActionSchema } from '$lib/schemas/invitation';
 import { error, redirect } from '@sveltejs/kit';
 

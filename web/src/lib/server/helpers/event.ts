@@ -1,6 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import type { AppSupabaseClient } from '$lib/types/app.types';
-import type OpenAI from 'openai';
 import { ConfigurationError, UnauthorizedError } from '$lib/server/errors';
 
 /**

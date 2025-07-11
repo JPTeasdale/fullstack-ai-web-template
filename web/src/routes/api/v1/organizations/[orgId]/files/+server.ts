@@ -1,6 +1,6 @@
 import { uploadFile } from '$lib/server/services/fileService';
-import { createOrganizationApiHandler, parseFileUpload } from '$lib/server/api/helpers';
-import { createdResponse } from '$lib/server/api/response';
+import { createOrganizationApiHandler, parseFileUpload } from '$lib/server/helpers/api_helpers';
+import { createdResponse } from '$lib/server/helpers/response';
 
 export const POST = createOrganizationApiHandler(async (event) => {
 	// Parse file from FormData

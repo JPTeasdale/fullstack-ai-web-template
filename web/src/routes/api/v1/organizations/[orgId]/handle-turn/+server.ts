@@ -1,13 +1,13 @@
 import { handleLlmRequest } from '$lib/ai/server/serverLlmRequest';
 import { getOrganization } from '$lib/server/models/organizations';
-import { apiValidate, createOrganizationApiHandler } from '$lib/server/api/helpers';
+import { validateApi, createOrganizationApiHandler } from '$lib/server/helpers/api_helpers';
 import type { Tool } from 'openai/resources/responses/responses.mjs';
 import { aiRequestSchema } from '$lib/schemas/ai';
-import { checkOrganizationRateLimit } from '$lib/server/api/rate-limit';
+import { checkOrganizationRateLimit } from '$lib/server/helpers/rate-limit';
 import { NotFoundError } from '$lib/server/errors';
 
 export const POST = createOrganizationApiHandler(async (event) => {
-	const validated = await apiValidate(aiRequestSchema, event);
+	const validated = await validateApi(aiRequestSchema, event);
 	const { organizationId } = event;
 	const { supabaseAdmin } = event.locals;
 

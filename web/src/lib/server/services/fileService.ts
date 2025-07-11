@@ -5,7 +5,7 @@ import {
 	ValidationError,
 	PayloadTooLargeError
 } from '$lib/server/errors';
-import { extractR2, type AuthenticatedEvent } from '$lib/server/api/context';
+import { extractR2, type AuthenticatedEvent } from '$lib/server/helpers/event';
 import { getStreamFromFile } from '$lib/server/services/cloudflare/getStreamFromFile';
 import { isImageFile, isDocumentFile, FILE_TYPES } from '$lib/schemas/files';
 import type { Tables } from '$lib/types/generated/supabase.types';

@@ -1,6 +1,6 @@
-import { assertAuthenticated } from '$lib/server/api/context';
+import { assertAuthenticated } from '$lib/server/helpers/event';
 import type { PageServerLoad } from './$types';
-import { createAuthenticatedActionHandler } from '$lib/server/actions/helpers';
+import { createAuthenticatedActionHandler } from '$lib/server/helpers/action_helpers';
 import { generateConfirmationURL } from '$lib/server/auth/auth_utils';
 import { getPasswordResetTemplate } from '$lib/email/templates/password_reset';
 import { getMagicLinkTemplate } from '$lib/email/templates/magic_link';

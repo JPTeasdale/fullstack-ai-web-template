@@ -3,7 +3,7 @@ import { createApiErrorResponse } from '$lib/server/errors/api';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { z } from 'zod';
 
-import { assertAuthenticated, extractOrganizationId, type AuthenticatedEvent } from './context';
+import { assertAuthenticated, extractOrganizationId, type AuthenticatedEvent } from './event';
 /**
  * Create an API handler with automatic error handling
  */
@@ -41,7 +41,7 @@ export function createOrganizationApiHandler(
 	});
 }
 
-export async function apiValidate<T extends z.ZodType>(
+export async function validateApi<T extends z.ZodType>(
 	schema: T,
 	event: RequestEvent
 ): Promise<z.infer<T>> {
