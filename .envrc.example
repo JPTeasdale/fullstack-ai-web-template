@@ -17,11 +17,5 @@ export SUPABASE_DB_PASSWORD=TODO
 # from Project > 'Connect'
 export SUPABASE_REGION=TODO 
 
-# You will have to create this in Supabase uri
-# Sidebar > Authentication > Auth Hooks > Add New Hook > Email Hook > HTTPS
-# Fill in your production url `https://template.johnteasdale.com/api/webhooks/supabase/auth_email`
-# Click 'Generate Secret' and copy the value here
-export SUPABASE_AUTH_HOOK_SECRET=TODO
-
 # Create in https://dash.cloudflare.com/profile/api-tokens
 export npx CLOUDFLARE_API_TOKEN=TODO

@@ -2,7 +2,7 @@
 
 # Source environment utilities (relative to script directory)
 source "${0:A:h}/utils/env.sh"
-check_env_vars SUPABASE_PROJECT_ID SUPABASE_ACCESS_TOKEN SUPABASE_AUTH_HOOK_SECRET
+check_env_vars SUPABASE_PROJECT_ID SUPABASE_ACCESS_TOKEN SUPABASE_REGION
 
 SUPABASE_CONNECTION_STRING="postgresql://postgres.${SUPABASE_PROJECT_ID}:${SUPABASE_DB_PASSWORD}@${SUPABASE_REGION}.pooler.supabase.com:5432/postgres"
 

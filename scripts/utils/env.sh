@@ -35,7 +35,7 @@ check_env_vars() {
             echo "  - $var"
         done
         echo ""
-        echo "💡 Please ensure these variables are exported in your environment. You can use .zsh.env to load them automatically."
+        echo "💡 Please ensure these variables are exported in your environment. You can use .envrc to load them automatically."
         return 1
     fi
     
