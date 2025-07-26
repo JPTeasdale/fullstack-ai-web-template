@@ -1,6 +1,8 @@
 <script lang="ts" module>
 	import AnimationTypingDots from '$lib/components/animations/AnimationTypingDots.svelte';
 	import { cn, type WithElementRef } from '$lib/utils.js';
+	import { LoaderCircle } from '@lucide/svelte';
+	import type { Snippet } from 'svelte';
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import { type VariantProps, tv } from 'tailwind-variants';
 
@@ -40,6 +42,7 @@
 			variant?: ButtonVariant;
 			size?: ButtonSize;
 			loading?: boolean;
+			loader?: Snippet;
 		};
 </script>
 
@@ -53,6 +56,7 @@
 		type = 'button',
 		loading = false,
 		disabled,
+		loader,
 		children,
 		...restProps
 	}: ButtonProps = $props();
@@ -70,7 +74,7 @@
 		{...restProps}
 	>
 		{#if loading}
-			<AnimationTypingDots />
+			<LoaderCircle class="animate-spin" />
 		{:else}
 			{@render children?.()}
 		{/if}
@@ -85,7 +89,7 @@
 		{...restProps}
 	>
 		{#if loading}
-			<AnimationTypingDots />
+			<LoaderCircle class="animate-spin" />
 		{:else}
 			{@render children?.()}
 		{/if}

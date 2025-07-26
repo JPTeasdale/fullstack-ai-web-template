@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { onMount } from 'svelte';
+	import Ticker from '$lib/components/landing/Ticker.svelte';
+	import LogoCarosel from '$lib/components/landing/LogoCarosel.svelte';
 
 	let mounted = false;
 
@@ -102,16 +104,7 @@
 </svelte:head>
 
 <div class="bg-background min-h-screen">
-	<!-- Ticker Tape -->
-	<div class="bg-primary/10 border-primary/20 overflow-hidden border-b">
-		<div class="ticker-wrapper">
-			<div class="ticker-content">
-				{#each [...tickerItems, ...tickerItems] as item}
-					<span class="ticker-item text-primary px-8 text-sm font-medium">{item}</span>
-				{/each}
-			</div>
-		</div>
-	</div>
+	<Ticker items={tickerItems} />
 
 	<!-- Announcement Bar -->
 	<div
@@ -299,27 +292,7 @@
 		</div>
 	</div>
 
-	<!-- Logo Carousel Section -->
-	<div class="border-border bg-muted/30 border-b py-12">
-		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-			<p
-				class="text-muted-foreground mb-8 text-center text-sm font-medium uppercase tracking-wider"
-			>
-				Here are logos from completely unaffiliated companies
-			</p>
-			<div class="logo-carousel-wrapper overflow-hidden">
-				<div class="logo-carousel flex items-center gap-16">
-					{#each [...companyLogos, ...companyLogos] as company}
-						<img
-							src={company.logo}
-							alt={company.name}
-							class="h-8 w-auto opacity-60 grayscale transition-opacity hover:opacity-100 hover:grayscale-0"
-						/>
-					{/each}
-				</div>
-			</div>
-		</div>
-	</div>
+	<LogoCarosel logos={companyLogos} />
 
 	<!-- Features Grid -->
 	<div id="features" class="bg-muted/50 px-4 py-24 sm:px-6 lg:px-8">
@@ -762,7 +735,6 @@
 			</div>
 		</div>
 	</div>
-
 	<!-- About Me -->
 	<div class="bg-muted/50 border-border border-y px-4 py-20 sm:px-6 lg:px-8">
 		<div class="mx-auto max-w-4xl">
@@ -872,50 +844,6 @@
 		}
 	}
 
-	/* Ticker tape animation */
-	.ticker-wrapper {
-		position: relative;
-		overflow: hidden;
-		height: 40px;
-		display: flex;
-		align-items: center;
-	}
-
-	.ticker-content {
-		display: flex;
-		animation: ticker 30s linear infinite;
-		white-space: nowrap;
-	}
-
-	@keyframes ticker {
-		0% {
-			transform: translateX(0);
-		}
-		100% {
-			transform: translateX(-50%);
-		}
-	}
-
-	/* Logo carousel animation */
-	.logo-carousel-wrapper {
-		position: relative;
-		overflow: hidden;
-	}
-
-	.logo-carousel {
-		animation: logo-scroll 40s linear infinite;
-		white-space: nowrap;
-	}
-
-	@keyframes logo-scroll {
-		0% {
-			transform: translateX(0);
-		}
-		100% {
-			transform: translateX(-50%);
-		}
-	}
-
 	/* Fade in animations */
 	.animate-fade-in {
 		animation: fadeIn 0.8s ease-out;
@@ -944,12 +872,4 @@
 		}
 	}
 
-	/* Hover effects for logo carousel */
-	.logo-carousel img {
-		transition: all 0.3s ease;
-	}
-
-	.logo-carousel-wrapper:hover .logo-carousel {
-		animation-play-state: paused;
-	}
 </style>

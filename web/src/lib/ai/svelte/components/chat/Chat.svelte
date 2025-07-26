@@ -4,7 +4,7 @@
 -->
 
 <script lang="ts">
-	import { onMount, onDestroy, type Snippet } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { browser } from '$app/environment';
 	import { fade, slide } from 'svelte/transition';
 
@@ -20,7 +20,7 @@
 	import MessageContent from './chat_items/MessageContent.svelte';
 	import MessageRefusal from './chat_items/MessageRefusal.svelte';
 	import type { ResponseOutputText } from 'openai/resources/responses/responses';
-
+	import Button from '$lib/components/ui/button/Button.svelte';
 	// Props using SvelteKit 5 runes
 	const props: {
 		items?: ConversationItem[];
@@ -34,6 +34,7 @@
 
 	// Create state from props with defaults
 	let items = $derived(props.items || []);
+	let lastItem = $derived(items.length > 0 ? items[items.length - 1] : null);
 	let onSendMessage = $derived(props.onSendMessage || ((message: string) => {}));
 	let generating = $derived(props.generating || false);
 
@@ -42,11 +43,12 @@
 	let isAtBottom = $state(true);
 
 	// Element references using runes
+	let messagesWrapperRef: HTMLDivElement | null = $state(null);
+	let messageListRef: HTMLDivElement | null = $state(null);
+
 	let inputContainerRef: HTMLDivElement | null = $state(null);
-	let scrollViewRef: HTMLDivElement | null = $state(null);
 	let inputRef: HTMLTextAreaElement | null = $state(null);
-	let messagesContainerRef: HTMLDivElement | null = $state(null);
-	let messageRefs: (HTMLDivElement | null)[] = $state([]);
+
 	let scrollToBottomOpacity = $state(0);
 
 	// Handle scroll-to-bottom button opacity
@@ -54,44 +56,30 @@
 		scrollToBottomOpacity = isAtBottom ? 0 : 1;
 	});
 
+	$effect(() => {
+		if (lastItem && lastItem.type === 'message' && lastItem.role === 'user') {
+			const lastUserMessageElement = document.getElementById(lastItem.id);
+			messageListRef?.style.setProperty(
+				'min-height',
+				`calc(${(lastUserMessageElement?.offsetTop ?? 0) - 8}px + 100%)`
+			);
+
+			messagesWrapperRef?.scrollTo({
+				top: messageListRef?.scrollHeight,
+				behavior: 'smooth'
+			});
+		}
+	});
+
 	// Handle keyboard events
 	onMount(() => {
 		if (browser) {
 			window.addEventListener('keydown', handleKeyDown);
+			return () => {
+				window.removeEventListener('keydown', handleKeyDown);
+			};
 		}
 	});
-
-	onDestroy(() => {
-		if (browser) {
-			window.removeEventListener('keydown', handleKeyDown);
-		}
-	});
-
-	const scrollToLatestUserMessage = async (animated = true): Promise<void> => {
-		// Use standard array method instead of findLastIndex for better compatibility
-		let userMessageIndex = -1;
-		for (const [idx, item] of items.entries()) {
-			if (item.type === 'message' && item.role === 'user') {
-				userMessageIndex = idx;
-			}
-		}
-		if (userMessageIndex >= 0) {
-			await scrollToMessage(userMessageIndex, animated);
-		}
-	};
-
-	const scrollToMessage = async (messageIndex: number, animated: boolean): Promise<void> => {
-		const messageView = messageRefs[messageIndex];
-
-		if (messageIndex >= 0 && scrollViewRef && messageView) {
-			const messageOffsetTop = messageView.offsetTop;
-			// Scroll to the message position
-			scrollViewRef.scrollTo({
-				top: messageOffsetTop,
-				behavior: animated ? 'smooth' : 'instant'
-			});
-		}
-	};
 
 	const handleScroll = (event: Event): void => {
 		const target = event.target as HTMLDivElement;
@@ -108,11 +96,6 @@
 		if (inputMessageText.trim()) {
 			onSendMessage(inputMessageText);
 			inputMessageText = '';
-			// Keep focus on the input
-			setTimeout(() => {
-				if (inputRef) inputRef.focus();
-				scrollToLatestUserMessage();
-			}, 100);
 		}
 	};
 
@@ -126,9 +109,9 @@
 	};
 
 	const scrollToBottom = (): void => {
-		if (scrollViewRef && messagesContainerRef) {
-			scrollViewRef.scrollTo({
-				top: scrollViewRef.scrollHeight,
+		if (messagesWrapperRef && messageListRef) {
+			messagesWrapperRef.scrollTo({
+				top: messagesWrapperRef.scrollHeight,
 				behavior: 'smooth'
 			});
 			isAtBottom = true;
@@ -139,18 +122,13 @@
 <div class="flex h-full max-h-full min-h-full w-full flex-col">
 	<!-- Scrollable content area -->
 	<div
-		bind:this={scrollViewRef}
+		bind:this={messagesWrapperRef}
 		class="scroll-view flex w-full justify-center"
 		onscroll={handleScroll}
 	>
-		<div bind:this={messagesContainerRef} class="flex h-full w-full max-w-xl flex-col gap-2">
-			{#each items as item, index}
-				{@const isLast = index === items.length - 1}
-				<div
-					class="w-full"
-					style:min-height={isLast ? '100%' : undefined}
-					bind:this={messageRefs[index]}
-				>
+		<div bind:this={messageListRef} class="flex h-full w-full max-w-xl flex-col gap-2">
+			{#each items as item}
+				<div class="w-full" id={item.id}>
 					{#if item.type === 'function_call'}
 						<FunctionCall {item} />
 					{:else if item.type === 'reasoning'}
@@ -203,7 +181,7 @@
 		<div class="flex w-full max-w-xl flex-col justify-center">
 			<div class="relative w-full">
 				{#if props.error}
-					<div class="absolute right-0 bottom-0 left-0 p-4" transition:slide={{ duration: 200 }}>
+					<div class="absolute bottom-0 left-0 right-0 p-4" transition:slide={{ duration: 200 }}>
 						<div
 							class="rounded-sm border border-red-500 bg-red-100 p-2 text-center text-xs text-red-500"
 						>
@@ -225,14 +203,16 @@
 						rows={2}
 						use:textautosize
 					></textarea>
-					<button
-						class="send-button bg-primary text-primary-foreground hover:bg-primary/60"
+					<Button
+						class="rounded-full"
 						disabled={!inputMessageText.trim()}
 						onclick={sendMessage}
 						data-testid="send-button"
+						size="sm"
+						loading={generating}
 					>
-						<ArrowUp size={18} />
-					</button>
+						<ArrowUp size={10} />
+					</Button>
 				</div>
 			</div>
 		</div>
